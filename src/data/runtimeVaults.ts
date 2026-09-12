@@ -2,6 +2,7 @@ import { customer } from './mockData'
 import type { Vault } from '../types'
 
 const STORAGE_KEY = 'foxsycu.demo.vaults.runtime.v1'
+const SYNC_EVENT = 'foxsycu-customer-sync'
 
 function canUseStorage(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -10,6 +11,10 @@ function canUseStorage(): boolean {
 function persist(vaults: Vault[]): void {
   if (!canUseStorage()) return
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(vaults))
+}
+
+function notify(): void {
+  if (canUseStorage()) window.dispatchEvent(new CustomEvent(SYNC_EVENT))
 }
 
 function syncCustomer(vaults: Vault[]): void {
@@ -24,8 +29,9 @@ export function hydrateRuntimeVaults(): void {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     if (!raw) return
     const parsed = JSON.parse(raw) as Vault[]
-    if (Array.isArray(parsed) && parsed.every(vault => vault && typeof vault.id === 'string' && typeof vault.name === 'string' && typeof vault.balance === 'number')) {
+    if (Array.isArray(parsed) && parsed.every(vault => vault && typeof vault.id === 'string' && typeof vault.name === 'string' && typeof vault.balance === 'number' && typeof vault.target === 'number' && typeof vault.apy === 'number' && typeof vault.opened === 'string')) {
       syncCustomer(parsed)
+      notify()
     }
   } catch {
     // Ignore malformed local runtime state and keep the checked-in synthetic defaults.
@@ -51,6 +57,6 @@ export function createRuntimeVault(name: string, target: number): Vault {
   const vaults = [...customer.vaults, vault]
   syncCustomer(vaults)
   persist(vaults)
-  window.dispatchEvent(new CustomEvent('foxsycu-customer-sync'))
+  notify()
   return vault
 }
