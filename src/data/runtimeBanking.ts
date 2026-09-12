@@ -16,7 +16,10 @@ export function useRuntimeRefresh() {
   const [, setVersion] = useState(0)
   useEffect(() => {
     refreshCustomerSnapshot()
-    const onSync = () => setVersion(value => value + 1)
+    const onSync = () => {
+      refreshCustomerSnapshot()
+      setVersion(value => value + 1)
+    }
     window.addEventListener('foxsycu-customer-sync', onSync)
     return () => window.removeEventListener('foxsycu-customer-sync', onSync)
   }, [])
