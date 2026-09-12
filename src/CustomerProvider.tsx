@@ -12,8 +12,30 @@ const universe = buildTransactionUniverse(seed.transactions)
 function dbTransaction(t: Transaction, userId: string, accountId: string) { return { user_id: userId, account_id: accountId, reference: t.reference, transaction_type: t.type ?? 'TRANSFER', direction: t.amount >= 0 ? 'CREDIT' : 'DEBIT', amount: Math.abs(t.amount), fee: t.fee ?? 0, currency: t.currency, status: t.status.toLowerCase(), counterparty: t.counterparty, description: t.description, memo: t.memo, initiated_at: t.initiatedAt ?? new Date().toISOString(), effective_date: new Date(t.effectiveDate ?? t.date).toISOString().slice(0, 10), posted_at: t.postedAt ? new Date(t.postedAt).toISOString() : null, available_balance_after: t.availableBalanceAfter, posted_balance_after: t.postedBalanceAfter, metadata: t.metadata ?? {} } }
 
 async function ensureCustomer(userId: string) {
+  const { data: authData } = await supabase.auth.getUser()
+  const meta = authData.user?.user_metadata ?? {}
   const existing = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle()
-  if (!existing.data) { await supabase.from('profiles').upsert({ id: userId, full_name: 'John Doe', tier: 'Premium User', currency: 'USD', customer_since: '2021-03-18' }); await supabase.from('audit_logs').insert({ user_id: userId, action: 'customer_profile_created', resource_type: 'profile', resource_id: userId, metadata: { synthetic: true } }) }
+  if (!existing.data) {
+    await supabase.from('profiles').upsert({
+      id: userId,
+      full_name: String(meta.full_name || 'FOXSYCU Customer'),
+      preferred_name: meta.preferred_name || null,
+      phone: meta.phone || null,
+      date_of_birth: meta.date_of_birth || null,
+      address_line1: meta.address_line1 || null,
+      city: meta.city || null,
+      state_region: meta.state_region || null,
+      postal_code: meta.postal_code || null,
+      country: meta.country || 'United States',
+      occupation: meta.occupation || null,
+      employment_status: meta.employment_status || null,
+      tier: 'Premium User',
+      currency: 'USD',
+      customer_since: new Date().toISOString().slice(0, 10),
+      profile_completed: Boolean(meta.full_name && meta.address_line1 && meta.city),
+    })
+    await supabase.from('audit_logs').insert({ user_id: userId, action: 'customer_profile_created', resource_type: 'profile', resource_id: userId, metadata: { synthetic: true } })
+  }
   let { data: account } = await supabase.from('accounts').select('*').eq('user_id', userId).eq('account_type', 'checking').maybeSingle()
   if (!account) { const created = await supabase.from('accounts').insert({ user_id: userId, account_type: 'checking', account_name: 'FOXSYCU Private Checking', currency: 'USD', account_number_last4: '4821', status: 'active', available_balance: 5000000, posted_balance: 5000000, pending_balance: 25000 }).select('*').single(); if (created.error) throw created.error; account = created.data }
   const { count: vaultCount } = await supabase.from('savings_vaults').select('id', { count: 'exact', head: true }).eq('user_id', userId)
@@ -25,7 +47,7 @@ async function ensureCustomer(userId: string) {
   const { count: notificationCount } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId)
   if (!notificationCount) await supabase.from('notifications').insert([{ user_id: userId, title: 'Transfer alert', body: 'A $25,000 savings transfer is pending authorization.', notification_type: 'transaction' }, { user_id: userId, title: 'Security alert', body: 'Your recommended security controls are active.', notification_type: 'security' }])
   await supabase.from('security_preferences').upsert({ user_id: userId })
-  await supabase.from('card_controls').upsert({ user_id: userId, account_id: account!.id, last4: '4821' }, { onConflict: 'user_id,account_id' })
+  await supabase.from('card_controls').upsert({ user_id: userId, account_id: account!.id, last4: account.account_number_last4 || '4821' }, { onConflict: 'user_id,account_id' })
   const { count: supportCount } = await supabase.from('support_cases').select('id', { count: 'exact', head: true }).eq('user_id', userId)
   if (!supportCount) await supabase.from('support_cases').insert([{ user_id: userId, case_number: 'FX-2026-0184', subject: 'Account relationship review', status: 'open', priority: 'priority' }, { user_id: userId, case_number: 'FX-2026-0141', subject: 'Statement request', status: 'resolved', priority: 'normal' }])
   const { count: messageCount } = await supabase.from('secure_messages').select('id', { count: 'exact', head: true }).eq('user_id', userId)
@@ -47,7 +69,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       supabase.from('profiles').select('*').eq('id', uid).maybeSingle(), supabase.from('accounts').select('*').eq('user_id', uid).eq('account_type', 'checking').maybeSingle(), supabase.from('savings_vaults').select('*').eq('user_id', uid).order('created_at'), supabase.from('beneficiaries').select('*').eq('user_id', uid).order('created_at'), supabase.from('transactions').select('*').eq('user_id', uid).order('effective_date', { ascending: false }).order('created_at', { ascending: false }), supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }), supabase.from('card_controls').select('*').eq('user_id', uid).maybeSingle(), supabase.from('security_preferences').select('two_fa,passkey,alerts').eq('user_id', uid).maybeSingle(), supabase.from('statements').select('*').eq('user_id', uid).order('statement_month', { ascending: false }), supabase.from('support_cases').select('*').eq('user_id', uid).order('created_at', { ascending: false }), supabase.from('secure_messages').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
     ])
     syncDashboardLedger(transactions.data ?? [])
-    setData({ profile: profile.data, account: account.data, vaults: vaults.data ?? [], beneficiaries: beneficiaries.data ?? [], transactions: (transactions.data ?? []) as unknown as Transaction[], notifications: notifications.data ?? [], card: card.data, security: security.data ?? { two_fa: true, passkey: true, alerts: true }, statements: statements.data ?? [], supportCases: supportCases.data ?? [], messages: messages.data ?? [] })
+    setData({ profile: profile.data, account: account.data, vaults: vaults.data ?? [], beneficiaries: beneficiaries.data ?? [], transactions: (transactions.data ?? []) as unknown as Transaction[], notifications: notifications.data ?? [], statements: statements.data ?? [], card: card.data, security: security.data ?? { two_fa: true, passkey: true, alerts: true }, supportCases: supportCases.data ?? [], messages: messages.data ?? [] })
   }
   useEffect(() => { let active = true; void supabase.auth.getSession().then(({ data }) => { if (active) { setSession(data.session); setLoading(false) } }); const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => { setSession(next); setLoading(false) }); return () => { active = false; listener.subscription.unsubscribe() } }, [])
   useEffect(() => { if (session) void refresh() }, [session])
