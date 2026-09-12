@@ -4,17 +4,12 @@ import { supabase } from './supabaseClient'
 import { customer as seed } from './data/mockData'
 import { buildTransactionUniverse } from './transactionEngine'
 import { runtimeEngine } from './data/runtimeBanking'
+import { CANONICAL_ACCOUNT, CANONICAL_BENEFICIARIES, CANONICAL_VAULTS } from './data/canonicalBanking'
 import type { Transaction } from './types'
 
 type CustomerData = { loading: boolean; session: Session | null; profile: any | null; account: any | null; vaults: any[]; beneficiaries: any[]; transactions: Transaction[]; notifications: any[]; statements: any[]; card: any | null; security: { two_fa: boolean; passkey: boolean; alerts: boolean }; supportCases: any[]; messages: any[]; refresh: () => Promise<void> }
 const CustomerContext = createContext<CustomerData | null>(null)
 const universe = buildTransactionUniverse(seed.transactions)
-
-const accountLast4 = (userId: string) => {
-  let hash = 0
-  for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  return String(hash % 10000).padStart(4, '0')
-}
 const caseNumber = (prefix: string, index: number) => `FX-${new Date().getFullYear()}-${prefix}${String(index).padStart(3, '0')}`
 
 function dbTransaction(t: Transaction, userId: string, accountId: string) {
@@ -32,22 +27,33 @@ async function ensureCustomer(userId: string) {
   }
   let { data: account } = await supabase.from('accounts').select('*').eq('user_id', userId).eq('account_type', 'checking').maybeSingle()
   if (!account) {
-    const last4 = accountLast4(userId)
-    const created = await supabase.from('accounts').insert({ user_id: userId, account_type: 'checking', account_name: 'FOXSYCU Private Checking', currency: 'USD', account_number_last4: last4, status: 'active', available_balance: 5000000, posted_balance: 5000000, pending_balance: 25000 }).select('*').single()
+    const created = await supabase.from('accounts').insert({ user_id: userId, account_type: CANONICAL_ACCOUNT.accountType, account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).select('*').single()
     if (created.error) throw created.error
     account = created.data
+  } else {
+    const aligned = await supabase.from('accounts').update({ account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).eq('id', account.id).select('*').single()
+    if (aligned.error) throw aligned.error
+    account = aligned.data
   }
-  const { count: vaultCount } = await supabase.from('savings_vaults').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-  if (!vaultCount) await supabase.from('savings_vaults').insert([{ user_id: userId, name: 'Emergency Reserve', balance: 250000, target_amount: 300000, apy: 4.5, status: 'active' }, { user_id: userId, name: 'Property Reserve', balance: 250000, target_amount: 500000, apy: 4.5, status: 'active' }, { user_id: userId, name: 'Travel & Lifestyle', balance: 125000, target_amount: 200000, apy: 4.5, status: 'active' }])
+  const existingVaults = await supabase.from('savings_vaults').select('*').eq('user_id', userId).order('created_at')
+  if (!existingVaults.data?.length) {
+    await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' })))
+  } else {
+    for (let i = 0; i < Math.min(existingVaults.data.length, CANONICAL_VAULTS.length); i += 1) {
+      const v = CANONICAL_VAULTS[i]
+      const result = await supabase.from('savings_vaults').update({ name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' }).eq('id', existingVaults.data[i].id)
+      if (result.error) throw result.error
+    }
+  }
   const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-  if (!beneficiaryCount) await supabase.from('beneficiaries').insert([{ user_id: userId, name: 'Alex Smith', account_masked: '••••1920', beneficiary_type: 'individual', status: 'active' }, { user_id: userId, name: 'Maria Johnson', account_masked: '••••4472', beneficiary_type: 'individual', status: 'active' }, { user_id: userId, name: 'Northstar Holdings', account_masked: '••••8104', beneficiary_type: 'business', status: 'active' }])
+  if (!beneficiaryCount) await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active' })))
   const { count: transactionCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', userId)
   if (!transactionCount) for (let i = 0; i < universe.length; i += 100) { const result = await supabase.from('transactions').insert(universe.slice(i, i + 100).map(t => dbTransaction(t, userId, account!.id))); if (result.error) throw result.error }
   const { count: notificationCount } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId)
   if (!notificationCount) await supabase.from('notifications').insert([{ user_id: userId, title: 'Transfer alert', body: 'A savings transfer is pending authorization.', notification_type: 'transaction' }, { user_id: userId, title: 'Security alert', body: 'Your recommended security controls are active.', notification_type: 'security' }])
   await Promise.all([
     supabase.from('security_preferences').upsert({ user_id: userId }),
-    supabase.from('card_controls').upsert({ user_id: userId, account_id: account!.id, last4: account.account_number_last4 || accountLast4(userId) }, { onConflict: 'user_id,account_id' }),
+    supabase.from('card_controls').upsert({ user_id: userId, account_id: account!.id, last4: CANONICAL_ACCOUNT.last4 }, { onConflict: 'user_id,account_id' }),
   ])
   const { count: supportCount } = await supabase.from('support_cases').select('id', { count: 'exact', head: true }).eq('user_id', userId)
   if (!supportCount) await supabase.from('support_cases').insert([{ user_id: userId, case_number: caseNumber('AR', 1), subject: 'Account relationship review', status: 'open', priority: 'priority' }, { user_id: userId, case_number: caseNumber('ST', 2), subject: 'Statement request', status: 'resolved', priority: 'normal' }])
@@ -65,7 +71,7 @@ function syncLegacyCustomer(profile: any, account: any, vaults: any[]) {
   seed.name = profile.preferred_name || profile.full_name || seed.name
   seed.accountStatus = account.status === 'active' ? 'Active' : account.status
   seed.accountType = account.account_type === 'checking' ? 'Checking' : account.account_type
-  seed.accountOpened = account.created_at ? new Date(account.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : seed.accountOpened
+  seed.accountOpened = CANONICAL_ACCOUNT.opened
   seed.customerSince = profile.customer_since || seed.customerSince
   seed.savingsBalance = vaults.reduce((sum, vault) => sum + Number(vault.balance || 0), 0)
   seed.vaults = vaults.map(v => ({ ...v, balance: Number(v.balance || 0) }))
