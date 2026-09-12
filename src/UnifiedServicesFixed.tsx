@@ -19,4 +19,5 @@ export const UnifiedSavings = SavingsCenter
 export const UnifiedCards = CardsCenter
 export const UnifiedStatements = StatementsCenter
 export const UnifiedSettings = withShell(SettingsPage)
+// Build 2: transfers are routed exclusively through the money-movement service boundary.
 export const UnifiedTransfers = TransferCenterV3
