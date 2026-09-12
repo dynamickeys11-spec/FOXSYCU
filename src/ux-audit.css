@@ -1,0 +1,32 @@
+/* FOXSYCU UX audit corrections: accessibility, hierarchy, touch targets, focus, status clarity, mobile behavior. */
+:focus-visible{outline:3px solid #84adff;outline-offset:2px}
+button,a,input,select{font-family:inherit}
+button,a{ -webkit-tap-highlight-color:transparent }
+.bank-link,.primary-btn,.secondary-btn,.icon-button,.menu-button,.side-close,.close,.rail-tabs button,.statement-line button,.mobile-nav a{min-height:40px}
+.icon-button,.menu-button,.close,.side-close{cursor:pointer}
+.icon-button{position:relative}
+.icon-button i{position:absolute;right:8px;top:7px;width:6px;height:6px;border-radius:50%;background:#d92d20}
+.transaction-row:hover{background:#f8fafc}
+.transaction-row:focus-visible{border-radius:6px}
+.status{white-space:nowrap}
+/* Make transaction status explicit even when the compact row is used. */
+.transaction-value small{display:inline-block;color:#667085;font-size:9px;margin-top:3px}
+/* Modal/drawer safety: preserve usable close targets and readable content. */
+.modal,.drawer-back{overscroll-behavior:contain}
+.close{display:grid;place-items:center;cursor:pointer}
+/* Better mobile ergonomics. */
+@media(max-width:760px){
+  .global-search:focus-within{width:min(240px,calc(100vw - 110px));border:1px solid #d0d5dd;padding:0 10px}
+  .global-search:focus-within input{display:block}
+  .header-actions{gap:6px}
+  .bank-content{padding-bottom:92px}
+  .action-strip a{min-height:68px}
+  .primary-btn,.secondary-btn{min-height:44px}
+  .field input,.field select{height:46px}
+  .modal{align-items:flex-end;padding:0}
+  .confirm{border-radius:14px 14px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));width:100%}
+  .modal-actions{display:grid;grid-template-columns:1fr 1fr}
+  .modal-actions>*{width:100%}
+  .receipt-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
