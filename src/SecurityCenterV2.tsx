@@ -1,0 +1,56 @@
+import { useEffect, useState } from 'react'
+import { KeyRound, Smartphone, ShieldCheck, RefreshCw, Trash2, Copy, CheckCircle2, AlertTriangle, MonitorSmartphone, Clock3 } from 'lucide-react'
+import { BankingShell } from './BankingShell'
+import { MFAEnrollment } from './MFAEnrollment'
+import { supabase } from './supabaseClient'
+import { useCustomerData } from './CustomerProvider'
+import './security-premium.css'
+
+function Card({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+  return <section className="sp-card"><div className="sp-card-title"><div><h2>{title}</h2>{note && <p>{note}</p>}</div></div>{children}</section>
+}
+
+function PasskeyManager() {
+  const [passkeys, setPasskeys] = useState<any[]>([])
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const api = (supabase.auth as any).passkey
+  const load = async () => { if (!api) return; const { data, error } = await api.list(); if (error) setMessage(error.message); setPasskeys(data ?? []) }
+  useEffect(() => { void load() }, [])
+  const register = async () => { setBusy(true); setMessage(''); const { error } = await (supabase.auth as any).registerPasskey(); setBusy(false); if (error) setMessage(error.message); else await load() }
+  const remove = async (id: string) => { setBusy(true); setMessage(''); const { error } = await api.delete({ passkeyId: id }); setBusy(false); if (error) setMessage(error.message); else await load() }
+  return <Card title="Passkeys" note="Phishing-resistant sign-in with your device, password manager or security key"><div className="sp-status"><KeyRound size={22}/><div><b>{passkeys.length ? `${passkeys.length} passkey${passkeys.length === 1 ? '' : 's'} registered` : 'No passkeys registered'}</b><small>Passkeys use WebAuthn and never expose the private key to FOXSYCU.</small></div></div>{passkeys.map(p => <div className="sp-device" key={p.id}><KeyRound/><div><b>{p.friendly_name || 'Passkey'}</b><small>Added {new Date(p.created_at).toLocaleString()}{p.last_used_at ? ` · Last used ${new Date(p.last_used_at).toLocaleString()}` : ''}</small></div><button className="sp-icon-button" disabled={busy} onClick={() => void remove(p.id)} title="Remove passkey"><Trash2 size={15}/></button></div>)}<button className="sp-primary" disabled={busy || !api} onClick={() => void register()}>{busy ? 'Waiting for authenticator…' : 'Add passkey'}</button>{message && <div className="auth-message">{message}</div>}</Card>
+}
+
+function RecoveryCodes() {
+  const [codes, setCodes] = useState<string[]>([])
+  const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const generate = async () => { setBusy(true); setCodes([]); const { data, error } = await supabase.rpc('issue_mfa_recovery_codes'); setBusy(false); if (error) { setCodes([]); return } setCodes((data ?? []).map((r: { code: string }) => r.code)) }
+  const copy = async () => { await navigator.clipboard.writeText(codes.join('\n')); setCopied(true); window.setTimeout(() => setCopied(false), 1500) }
+  return <Card title="Recovery codes" note="One-time backup codes for recovering access when your authenticator is unavailable"><div className="sp-alert"><AlertTriangle/><div><b>Store these codes offline</b><small>Each code works once. Generating a new set invalidates unused codes from the previous set.</small></div></div>{codes.length ? <><div className="recovery-grid">{codes.map(code => <code key={code}>{code}</code>)}</div><div className="sp-action-row"><button className="sp-secondary" onClick={() => void copy()}>{copied ? <CheckCircle2 size={15}/> : <Copy size={15}/>} {copied ? 'Copied' : 'Copy codes'}</button><button className="sp-secondary" onClick={() => window.print()}>Print / save</button></div><p className="sp-warning">This is the only time the plaintext recovery codes are displayed.</p></> : <button className="sp-primary" disabled={busy} onClick={() => void generate()}>{busy ? 'Generating…' : 'Generate recovery codes'}</button>}</Card>
+}
+
+function SecurityActivity() {
+  const [events, setEvents] = useState<any[]>([])
+  const [devices, setDevices] = useState<any[]>([])
+  const load = async () => { const [{ data: e }, { data: d }] = await Promise.all([supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(12), supabase.from('trusted_devices').select('*').order('last_seen_at', { ascending: false })]); setEvents(e ?? []); setDevices(d ?? []) }
+  useEffect(() => { void load() }, [])
+  const revoke = async (id: string) => { await supabase.rpc('revoke_trusted_device', { p_device_id: id }); await load() }
+  return <div className="sp-grid"><Card title="Trusted devices" note="Browsers and devices registered to this customer"><div className="sp-device-list">{devices.length ? devices.map(d => <div className="sp-device" key={d.id}><MonitorSmartphone/><div><b>{d.device_name}</b><small>{d.device_type} · Last seen {new Date(d.last_seen_at).toLocaleString()}</small></div><strong>{d.trusted ? 'Trusted' : 'Revoked'}</strong>{d.trusted && <button className="sp-icon-button" onClick={() => void revoke(d.id)} title="Revoke device"><Trash2 size={15}/></button>}</div>) : <div className="sp-alert"><MonitorSmartphone/><div><b>No registered devices</b><small>Your current security session will appear here when the browser is active.</small></div></div>}</div></Card><Card title="Security activity" note="Recent authentication and security events"><div className="sp-event-list">{events.length ? events.map(e => <div className="sp-event" key={e.id}><ShieldCheck/><div><b>{e.title}</b><small>{e.description ?? e.event_type}</small></div><strong>{new Date(e.created_at).toLocaleString()}</strong></div>) : <div className="sp-alert"><Clock3/><div><b>No security events recorded</b><small>Authentication and device activity will appear here.</small></div></div>}</div></Card></div>
+}
+
+function SecurityContent() {
+  const { security, refresh } = useCustomerData()
+  const [mfa, setMfa] = useState<{ id: string; status: string }[]>([])
+  const [enrolling, setEnrolling] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const loadMfa = async () => { const { data } = await supabase.auth.mfa.listFactors(); setMfa((data?.totp ?? []).map(f => ({ id: f.id, status: f.status }))) }
+  useEffect(() => { void loadMfa() }, [])
+  const verified = mfa.find(f => f.status === 'verified')
+  const disable = async () => { if (!verified) return; setBusy(true); const result = await supabase.auth.mfa.unenroll({ factorId: verified.id }); setBusy(false); if (!result.error) await loadMfa() }
+  const alerts = async () => { const uid = (await supabase.auth.getUser()).data.user?.id; if (!uid) return; await supabase.from('security_preferences').update({ alerts: !security.alerts, updated_at: new Date().toISOString() }).eq('user_id', uid); await refresh() }
+  return <><div className="sp-header"><div><span>SECURITY CENTER</span><h1>Protect your banking relationship</h1><p>Authentication, recovery, passkeys, devices and security activity.</p></div></div><div className="sp-grid"><Card title="Security posture" note="Current protection status"><div className="sp-status"><CheckCircle2 size={22}/><div><b>{verified && security.alerts ? 'Strong protection' : 'Protection needs attention'}</b><small>{verified ? 'Authenticator MFA is active.' : 'Enable an authenticator before relying on recovery codes.'}</small></div></div><div className="sp-metrics"><div><span>2FA</span><b>{verified ? 'Enabled' : 'Disabled'}</b></div><div><span>Passkeys</span><b>WebAuthn</b></div><div><span>Alerts</span><b>{security.alerts ? 'Enabled' : 'Disabled'}</b></div></div></Card><Card title="Authenticator MFA" note="TOTP backed by Supabase Auth">{verified ? <><div className="sp-mfa-cta"><Smartphone/><div><b>Authenticator enabled</b><small>Your verified TOTP factor can satisfy AAL2 challenges.</small></div><button className="sp-secondary" disabled={busy} onClick={() => void disable()}>{busy ? 'Working…' : 'Remove authenticator'}</button></div></> : enrolling ? <MFAEnrollment onDone={async () => { setEnrolling(false); await loadMfa() }}/> : <button className="sp-primary" onClick={() => setEnrolling(true)}>Set up authenticator</button>}<div className="sp-row"><span className="sp-icon"><AlertTriangle/></span><div className="sp-row-copy"><b>Security alerts</b><small>Notify you about sign-ins and sensitive activity.</small></div><button className={`sp-toggle ${security.alerts ? 'on' : ''}`} aria-pressed={security.alerts} onClick={() => void alerts()}><span/></button></div></Card></div><div className="sp-grid"><PasskeyManager/><RecoveryCodes/></div><SecurityActivity/><div className="sp-card"><div className="sp-card-title"><div><h2>Recovery guidance</h2><p>Use a recovery code only when your normal authenticator is unavailable. After recovery, enroll a new authenticator or passkey.</p></div><RefreshCw size={18}/></div></div></>
+}
+
+export function SecurityCenterV2() { return <BankingShell><SecurityContent/></BankingShell> }
