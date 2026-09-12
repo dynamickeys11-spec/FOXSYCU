@@ -1,13 +1,14 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
-import App from './WorldBankingV2'
 import { AuthPage } from './AuthPage'
 import { MFAChallenge } from './MFAChallenge'
 import { UnifiedCommunicationCenter, UnifiedPrivateBanking, UnifiedSecurityCenter, UnifiedBeneficiaries, UnifiedSavings, UnifiedCards, UnifiedStatements, UnifiedSettings, UnifiedTransfers } from './UnifiedServicesFixed'
+import { OverviewCenter, AccountsCenter, TransactionsCenter } from './CoreBankingViews'
 import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import './styles.css'
+import './core-banking.css'
 
 function ProtectedRoot() {
   const location = useLocation()
@@ -29,6 +30,9 @@ function ProtectedRoot() {
   useEffect(() => { if (!loading && !session) navigate('/login', { replace: true }) }, [loading, session, navigate])
   if (loading || !session || !aalReady) return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading FOXSYCU…</main>
   if (needsMfa) return <MFAChallenge onVerified={() => setNeedsMfa(false)} />
+  if (location.pathname === '/') return <OverviewCenter />
+  if (location.pathname === '/accounts') return <AccountsCenter />
+  if (location.pathname === '/transactions') return <TransactionsCenter />
   if (location.pathname === '/security') return <UnifiedSecurityCenter />
   if (location.pathname === '/communication') return <UnifiedCommunicationCenter />
   if (location.pathname === '/private-banking') return <UnifiedPrivateBanking />
@@ -38,7 +42,7 @@ function ProtectedRoot() {
   if (location.pathname === '/statements') return <UnifiedStatements />
   if (location.pathname === '/settings') return <UnifiedSettings />
   if (location.pathname === '/transfers') return <UnifiedTransfers />
-  return <App />
+  return <OverviewCenter />
 }
 
 function Root() {
