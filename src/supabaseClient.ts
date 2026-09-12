@@ -8,6 +8,6 @@ export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    experimental: { passkey: true },
+    experimental: { passkey: true, recoveryCodes: true },
   },
 })
