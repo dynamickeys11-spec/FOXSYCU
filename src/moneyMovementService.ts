@@ -6,6 +6,7 @@ export type MoneyMovementInput = {
   idempotencyKey: string
   rail: MoneyMovementRail
   sourceAccountId?: string | null
+  destinationAccountId?: string | null
   beneficiaryId?: string | null
   amount: number
   currency?: string
@@ -25,6 +26,7 @@ export async function createMoneyMovement(input: MoneyMovementInput) {
     p_memo: input.memo ?? null,
     p_scheduled_for: input.scheduledFor ?? null,
     p_metadata: input.metadata ?? {},
+    p_destination_account_id: input.destinationAccountId ?? null,
   })
   if (error) throw error
   return data as { movement_id: string; reference: string; status: string; fee: number; idempotent: boolean }
@@ -45,6 +47,7 @@ export async function createAndExecuteMoneyMovement(input: MoneyMovementInput) {
 export async function createTransferSchedule(input: {
   rail: MoneyMovementRail
   sourceAccountId: string
+  destinationAccountId?: string | null
   beneficiaryId?: string | null
   amount: number
   cadence: 'daily' | 'weekly' | 'monthly'
