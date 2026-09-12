@@ -1,4 +1,5 @@
 import type { CustomerSnapshot, Transaction } from '../types'
+import { buildTransactionUniverse } from '../transactionEngine'
 
 const months = [
   ['Mar', 2021], ['Apr', 2021], ['May', 2021], ['Jun', 2021], ['Jul', 2021], ['Aug', 2021], ['Sep', 2021], ['Oct', 2021], ['Nov', 2021], ['Dec', 2021],
@@ -44,30 +45,15 @@ historicalTransactions.push(
   { id: 'TX-20260911-009', kind: 'Transfer', description: 'Transfer to savings vault', date: 'Sep 11, 2026', time: '09:21 AM', amount: -25000, currency: 'USD', status: 'Pending', reference: 'TRF-20260911-0091', category: 'Savings', counterparty: 'Emergency Reserve Vault' },
 )
 
-// The displayed balance is reconciled from an opening balance plus posted ledger activity.
-// The balancing entry is a realistic portfolio-liquidity movement, not a UI-only number.
 const openingBalance = 125000
 const postedBeforeBalancing = openingBalance + historicalTransactions.filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.amount, 0)
 const balancingDeposit = Number((5000000 - postedBeforeBalancing).toFixed(2))
-
 historicalTransactions.push({ id: 'TX-20260910-010', kind: 'Deposit', description: 'Portfolio liquidity transfer', date: 'Sep 10, 2026', time: '03:17 PM', amount: balancingDeposit, currency: 'USD', status: 'Completed', reference: 'ACH-20260910-5521', category: 'Treasury / liquidity', counterparty: 'John Doe — linked investment account' })
 
-const transactions = [...historicalTransactions].sort((a, b) => new Date(`${b.date} ${b.time}`).getTime() - new Date(`${a.date} ${a.time}`).getTime())
+const transactions = buildTransactionUniverse(historicalTransactions)
 
 export const customer: CustomerSnapshot = {
-  name: 'John Doe',
-  membership: 'Premium User',
-  currency: 'USD',
-  customerSince: 'March 18, 2021',
-  accountOpened: 'March 18, 2021',
-  accountType: 'Private checking',
-  accountStatus: 'Active',
-  availableBalance: 5000000,
-  savingsBalance: 625000,
-  pendingBalance: 25000,
-  apy: 4.5,
-  interestEarned: 1842.36,
-  transactions,
+  name: 'John Doe', membership: 'Premium User', currency: 'USD', customerSince: 'March 18, 2021', accountOpened: 'March 18, 2021', accountType: 'Private checking', accountStatus: 'Active', availableBalance: 5000000, savingsBalance: 625000, pendingBalance: 25000, apy: 4.5, interestEarned: 1842.36, transactions,
   vaults: [
     { id: 'v1', name: 'Emergency Reserve', balance: 250000, apy: 4.5, target: 300000, opened: 'April 09, 2021', interestEarned: 6842.12 },
     { id: 'v2', name: 'Property Reserve', balance: 250000, apy: 4.5, target: 500000, opened: 'June 14, 2023', interestEarned: 5214.68 },
