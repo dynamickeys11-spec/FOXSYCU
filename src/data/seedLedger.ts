@@ -49,5 +49,6 @@ export const seedLedger: AccountLedger = {
     entry('TX-2021-001', 'Dec 17, 2021', 'Deposit', 'Initial portfolio funding', 320000, 'credit', 'DEP-20211217-001', 'Funding'),
     entry('TX-2021-002', 'Sep 03, 2021', 'Transfer', 'Initial property payment', 90000, 'debit', 'TRF-20210903-001', 'Property', 'Northstar Holdings'),
     entry('TX-2021-003', 'Jun 18, 2021', 'Deposit', 'Initial business proceeds', 180000, 'credit', 'DEP-20210618-001', 'Funding'),
+    entry('TX-2021-004', 'Mar 18, 2021', 'Deposit', 'Initial account funding', 226579.45, 'credit', 'DEP-20210318-001', 'Initial funding'),
   ],
 }
