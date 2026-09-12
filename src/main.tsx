@@ -39,7 +39,7 @@ function ProtectedRoot() {
   }, [session])
 
   useEffect(() => { if (!loading && !session) navigate('/login', { replace: true }) }, [loading, session, navigate])
-  if (loading || !session || !aalReady) return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading FOXSYCU…</main>
+  if (loading || !session || !aalReady) return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Inter, system-ui, sans-serif' }}>Loading FNCU…</main>
   if (needsMfa) return <MFAChallenge onVerified={() => setNeedsMfa(false)} />
   if (location.pathname === '/') return <OverviewCenter />
   if (location.pathname === '/accounts') return <AccountsCenter />
