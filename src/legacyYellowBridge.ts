@@ -50,9 +50,8 @@ async function persistSecuritySettings() {
         two_fa: values[0]?.classList.contains('on') ?? false,
         alerts: values[1]?.classList.contains('on') ?? false,
       }
-      if (index === 2) payload.paperless = values[2]?.classList.contains('on') ?? false
-      const { error } = await supabase.from('security_preferences').upsert({ user_id: user.user.id, ...payload })
-      if (error) console.warn('FOXSYCU security preference sync failed:', error.message)
+      await supabase.from('security_preferences').upsert({ user_id: user.user.id, ...payload })
+      if (index === 2 && values[2]) localStorage.setItem('foxsycu.paperless', values[2].classList.contains('on') ? '1' : '0')
     })
   })
 }
