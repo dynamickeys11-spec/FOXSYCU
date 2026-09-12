@@ -27,7 +27,6 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="main-area">
       <header className="topbar"><div className="topbar-left"><button className="menu" onClick={() => setOpen(true)} aria-label="Open navigation"><Menu size={21}/></button><div><span className="top-kicker">FOXSYCU / CUSTOMER</span><span className="top-title">{title}</span></div></div><div className="top-actions"><label className="search"><Search size={16}/><input placeholder="Search FOXSYCU" aria-label="Search"/></label><button className="icon-btn" aria-label="Notifications"><Bell size={18}/><i/></button><NavLink to="/messages" className="icon-btn" aria-label="Messages"><MessageSquare size={18}/></NavLink><NavLink to="/profile" className="profile"><span className="avatar">JD</span><span className="profile-text"><strong>John Doe</strong><small>Premium User</small></span><ChevronDown size={14}/></NavLink></div></header>
       <main className="content">{children}</main>
-      <div className="simulation-banner"><ShieldCheck size={13}/><span>SIMULATED ENVIRONMENT</span><em>All balances and transactions shown are test data and have no real monetary value.</em></div>
     </div>
     <nav className="mobile-nav" aria-label="Mobile navigation">{[['Home','/',Home],['Savings','/savings',PiggyBank],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Profile','/profile',User]].map(([label,path,Icon]) => <NavLink key={label as string} to={path as string} end={path === '/'}>{<Icon size={19}/>}<span>{label as string}</span></NavLink>)}</nav>
   </div>
