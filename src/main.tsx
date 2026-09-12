@@ -9,6 +9,7 @@ import App from './AppLedger'
 import './styles.css'
 import './functional-ui.css'
 import './auth.css'
+import './ledger-shell.css'
 
 // FOXSYCU canonical application shell: AppLedger preserves the original banking UI.
 function ProtectedRoot(){const {session,loading}=useCustomerData();const [aalReady,setAalReady]=useState(false);const [needsMfa,setNeedsMfa]=useState(false)
