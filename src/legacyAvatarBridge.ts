@@ -73,7 +73,7 @@ function showMessageDetail(row: any) {
   amount.className = 'drawer-amount'
   const amountValue = document.createElement('strong')
   amountValue.className = message.debit ? '' : 'credit'
-  amountValue.textContent = `${message.debit ? '' : '+'}${money(amountValueFrom(row))}`
+  amountValue.textContent = `${message.debit ? '' : '+'}${money(Math.abs(Number(row.amount || 0)))} `
   const status = document.createElement('span')
   status.className = `status status-${String(row.status || 'Completed').toLowerCase()}`
   status.textContent = String(row.status || 'Completed')
@@ -90,28 +90,23 @@ function showMessageDetail(row: any) {
   addDetail(details, 'Type', String(row.kind || row.type || 'Account activity'))
   addDetail(details, 'Counterparty', String(row.counterparty || row.merchant || '—'))
   addDetail(details, 'Category', String(row.category || row.merchantCategory || '—'))
-  addDetail(details, 'Account', `Private Checking · •••• ${String(row.accountLast4 || '4821')}`)
+  addDetail(details, 'Account', String(row.accountId || 'Private Checking'))
   if (row.availableBalanceAfter != null) addDetail(details, 'Balance after', money(Number(row.availableBalanceAfter)))
 
   const actions = document.createElement('div')
   actions.className = 'drawer-actions'
   const transaction = document.createElement('button')
   transaction.className = 'button secondary'
-  transaction.textContent = 'View transaction'
+  transaction.textContent = 'View transaction history'
   transaction.addEventListener('click', () => {
     clearMessageDetail()
-    window.dispatchEvent(new CustomEvent('foxsycu-open-transaction', { detail: row }))
-    window.location.hash = 'transaction'
+    window.location.assign('/transactions')
   })
   actions.append(transaction)
 
   drawer.append(head, amount, copy, details, actions)
   backdrop.append(drawer)
   document.body.append(backdrop)
-}
-
-function amountValueFrom(row: any) {
-  return Math.abs(Number(row.amount || 0))
 }
 
 function addDetail(parent: HTMLElement, label: string, value: string) {
@@ -135,7 +130,11 @@ function applyMessageBridge() {
   })
   if (!rows.length) return
 
+  const signature = rows.slice(0, 20).map((row: any) => `${row.id}:${row.status}:${row.amount}`).join('|')
+  if (container.dataset.foxsycuSignature === signature) return
+  container.dataset.foxsycuSignature = signature
   container.replaceChildren()
+
   rows.slice(0, 20).forEach((row: any) => {
     const message = transactionMessage(row)
     const article = document.createElement('article')
@@ -159,7 +158,7 @@ function applyMessageBridge() {
 
     const amount = document.createElement('span')
     amount.className = `message-amount ${message.debit ? 'debit' : 'credit'}`
-    amount.textContent = `${message.debit ? '-' : '+'}${money(amountValueFrom(row))}`
+    amount.textContent = `${message.debit ? '-' : '+'}${money(Math.abs(Number(row.amount || 0)))}`
 
     article.append(icon, content, amount)
     const open = () => showMessageDetail(row)
