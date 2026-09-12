@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { customer as seed } from './data/mockData'
 import { calculateBalances } from './transactionEngine'
+import { recordTransactionForAuthenticatedUser } from './supabaseData'
 import type { Transaction } from './types'
 
 const key = 'foxsycu.transaction-universe.v2'
@@ -29,6 +30,7 @@ const emit = () => {
 export function addTransaction(t: Transaction) {
   current = [t, ...current]
   emit()
+  void recordTransactionForAuthenticatedUser(t).catch(() => undefined)
 }
 
 export function useBankLedger() {
