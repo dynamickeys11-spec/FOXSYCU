@@ -8,7 +8,6 @@ const TARGET_BALANCE = 5_000_000
 const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100
 const isoDate = (year: number, month: number, day: number) => new Date(Date.UTC(year, month - 1, day)).toISOString()
 const displayDate = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
-const displayTime = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
 
 function buildSyntheticLedger(): AccountLedger {
   const entries: ReturnType<typeof makeEntry>[] = []
@@ -112,7 +111,7 @@ function buildSyntheticLedger(): AccountLedger {
   return { accountId: ACCOUNT_ID, currency: 'USD', openingBalance: OPENING_BALANCE, entries }
 }
 
-const ledger = buildSyntheticLedger()
+export const ledger = buildSyntheticLedger()
 assertReconciled(ledger, TARGET_BALANCE)
 
 const vaults = [
