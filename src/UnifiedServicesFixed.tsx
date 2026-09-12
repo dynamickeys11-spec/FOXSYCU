@@ -1,7 +1,8 @@
 import { BankingShell } from './BankingShell'
 import { SecurityCenter, PrivateBanking } from './SecurityPremiumFixed'
 import { SettingsPage } from './CoreBankingServices'
-import { TransferCenter, SavingsCenter, CardsCenter, BeneficiariesCenter, StatementsCenter, CommunicationCenterV2 } from './FeatureBanking'
+import { TransferCenterV2 } from './TransferCenterV2'
+import { SavingsCenter, CardsCenter, BeneficiariesCenter, StatementsCenter, CommunicationCenterV2 } from './FeatureBanking'
 import './unified-services.css'
 
 function withShell(Page: React.ComponentType) {
@@ -18,4 +19,4 @@ export const UnifiedSavings = SavingsCenter
 export const UnifiedCards = CardsCenter
 export const UnifiedStatements = StatementsCenter
 export const UnifiedSettings = withShell(SettingsPage)
-export const UnifiedTransfers = TransferCenter
+export const UnifiedTransfers = TransferCenterV2
