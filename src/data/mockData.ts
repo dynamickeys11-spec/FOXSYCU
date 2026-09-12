@@ -51,14 +51,16 @@ const balancingDeposit = Number((5000000 - postedBeforeBalancing).toFixed(2))
 historicalTransactions.push({ id: 'TX-20260910-010', kind: 'Deposit', description: 'Portfolio liquidity transfer', date: 'Sep 10, 2026', time: '03:17 PM', amount: balancingDeposit, currency: 'USD', status: 'Completed', reference: 'ACH-20260910-5521', category: 'Treasury / liquidity', counterparty: 'John Doe — linked investment account' })
 
 const transactions = buildTransactionUniverse(historicalTransactions)
+const savingsVaults = [
+  { id: 'v1', name: 'Emergency Reserve', balance: 250000, apy: 4.5, target: 300000, opened: 'April 09, 2021', interestEarned: 6842.12 },
+  { id: 'v2', name: 'Property Reserve', balance: 250000, apy: 4.5, target: 500000, opened: 'June 14, 2023', interestEarned: 5214.68 },
+  { id: 'v3', name: 'Travel & Lifestyle', balance: 125000, apy: 4.5, target: 200000, opened: 'January 21, 2025', interestEarned: 1842.36 },
+]
 
 export const customer: CustomerSnapshot = {
   name: 'John Doe', membership: 'Premium User', currency: 'USD', customerSince: 'March 18, 2021', accountOpened: 'March 18, 2021', accountType: 'Private checking', accountStatus: 'Active', availableBalance: 5000000, savingsBalance: 625000, pendingBalance: 25000, apy: 4.5, interestEarned: 1842.36, transactions,
-  vaults: [
-    { id: 'v1', name: 'Emergency Reserve', balance: 250000, apy: 4.5, target: 300000, opened: 'April 09, 2021', interestEarned: 6842.12 },
-    { id: 'v2', name: 'Property Reserve', balance: 250000, apy: 4.5, target: 500000, opened: 'June 14, 2023', interestEarned: 5214.68 },
-    { id: 'v3', name: 'Travel & Lifestyle', balance: 125000, apy: 4.5, target: 200000, opened: 'January 21, 2025', interestEarned: 1842.36 },
-  ],
+  vaults: savingsVaults,
+  savingsVaults,
   beneficiaries: [
     { id: 'ben-001', name: 'Alex Smith', accountLast4: '1920', currency: 'USD', added: 'May 12, 2022' },
     { id: 'ben-002', name: 'Maria Johnson', accountLast4: '4472', currency: 'USD', added: 'August 07, 2023' },
