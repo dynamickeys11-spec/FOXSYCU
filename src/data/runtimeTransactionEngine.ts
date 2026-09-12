@@ -1,12 +1,15 @@
 import type { Transaction } from '../types'
-import { availableBalance, makeEntry, roundMoney, settledBalance, type AccountLedger } from './ledger'
+import { availableBalance, makeEntry, roundMoney, settledBalance, type AccountLedger, type LedgerEntry } from './ledger'
 
 const STORAGE_KEY = 'foxsycu.demo.ledger.runtime.v1'
+const DB_SNAPSHOT_KEY = 'foxsycu.transaction-universe.v2'
 export interface TransferRequest { amount: number; beneficiary: string; memo?: string }
 export interface DepositRequest { amount: number; source?: string; memo?: string }
 export interface WithdrawalRequest { amount: number; memo?: string }
 export interface AdminCreditRequest { amount: number; reason: string; adminId: string }
 export interface EngineResult { ledger: AccountLedger; transaction: Transaction }
+
+type SnapshotRow = Partial<Transaction> & { id: string; reference: string; amount: number; direction?: 'credit' | 'debit' | 'CREDIT' | 'DEBIT'; status?: string; accountId?: string }
 
 const load = (seed: AccountLedger): AccountLedger => {
   if (typeof window === 'undefined') return seed
@@ -20,11 +23,68 @@ const id = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString
 const stamp = () => new Date().toISOString()
 const parts = (now: string) => { const d = new Date(now); return { date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) } }
 
+const normalizeStatus = (status?: string): Transaction['status'] => {
+  const value = String(status || '').toLowerCase()
+  if (value === 'pending') return 'Pending'
+  if (value === 'failed') return 'Failed'
+  if (value === 'reversed') return 'Reversed'
+  return 'Completed'
+}
+
+const normalizeKind = (row: SnapshotRow): Transaction['kind'] => {
+  if (row.kind && ['Deposit','Transfer','Interest','Withdrawal','Payment','Adjustment','SavingsTransfer','Internal Transfer','Card Purchase','Fee','Savings'].includes(row.kind)) return row.kind as Transaction['kind']
+  const type = String(row.type || '').toUpperCase()
+  if (type.includes('INTEREST')) return 'Interest'
+  if (type.includes('CARD')) return 'Card Purchase'
+  if (type.includes('FEE')) return 'Fee'
+  if (type.includes('WITHDRAW') || type.includes('ATM')) return 'Withdrawal'
+  if (type.includes('DEPOSIT') || type.includes('CREDIT')) return 'Deposit'
+  return 'Transfer'
+}
+
+const hydrateRows = (rows: SnapshotRow[], seed: AccountLedger): AccountLedger => {
+  const entries: LedgerEntry[] = rows.map(row => {
+    const rawDirection = String(row.direction || row.entryType || '').toLowerCase()
+    const debit = rawDirection === 'debit' || rawDirection === 'debit'.toLowerCase() || Number(row.amount) < 0
+    const amount = Math.abs(Number(row.amount || 0))
+    const createdAt = row.createdAt || row.postedAt || row.initiatedAt || new Date(`${row.date || new Date().toISOString().slice(0,10)}T${row.time || '00:00:00'}`).toISOString()
+    return makeEntry({
+      id: row.id,
+      accountId: row.accountId || seed.accountId,
+      entryType: debit ? 'debit' : 'credit',
+      kind: normalizeKind(row),
+      type: row.type as Transaction['type'],
+      category: row.category || 'USD account activity',
+      description: row.description || 'USD account activity',
+      date: row.date || new Date(createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      time: row.time || new Date(createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      amount,
+      currency: 'USD',
+      status: normalizeStatus(row.status),
+      reference: row.reference,
+      direction: debit ? 'DEBIT' : 'CREDIT',
+      counterparty: row.counterparty,
+      memo: row.memo,
+      fee: row.fee,
+      initiatedAt: row.initiatedAt,
+      effectiveDate: row.effectiveDate,
+      postedAt: row.postedAt,
+      availableBalanceAfter: row.availableBalanceAfter,
+      postedBalanceAfter: row.postedBalanceAfter,
+      metadata: row.metadata,
+      createdAt,
+    })
+  }).filter(entry => Number.isFinite(entry.amount) && entry.reference)
+  return { ...seed, entries }
+}
+
 export function createRuntimeTransactionEngine(seed: AccountLedger) {
   let state = load(seed)
+  let hasLocalRuntimeState = typeof window !== 'undefined' && Boolean(window.localStorage.getItem(STORAGE_KEY))
   const post = (entry: ReturnType<typeof makeEntry>): EngineResult => {
     if (state.entries.some(e => e.id === entry.id || e.reference === entry.reference)) throw new Error('Duplicate transaction prevented.')
     state = { ...state, entries: [entry, ...state.entries] }
+    hasLocalRuntimeState = true
     save(state)
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('foxsycu-customer-sync'))
     return { ledger: state, transaction: entry }
@@ -39,6 +99,18 @@ export function createRuntimeTransactionEngine(seed: AccountLedger) {
     getLedger: () => state,
     getSettledBalance: () => settledBalance(state),
     getAvailableBalance: () => availableBalance(state),
+    hasLocalRuntimeState: () => hasLocalRuntimeState,
+    hydrateFromSnapshot: () => {
+      if (hasLocalRuntimeState || typeof window === 'undefined') return false
+      try {
+        const raw = window.localStorage.getItem(DB_SNAPSHOT_KEY)
+        if (!raw) return false
+        const rows = JSON.parse(raw) as SnapshotRow[]
+        if (!Array.isArray(rows) || rows.length === 0) return false
+        state = hydrateRows(rows, seed)
+        return true
+      } catch { return false }
+    },
     deposit,
     send: ({ amount, beneficiary, memo }: TransferRequest): EngineResult => {
       validate(amount); if (!beneficiary.trim()) throw new Error('Select a beneficiary before sending money.'); if (amount > availableBalance(state)) throw new Error('Insufficient available balance.')
@@ -53,6 +125,6 @@ export function createRuntimeTransactionEngine(seed: AccountLedger) {
       validate(amount); if (!adminId.trim()) throw new Error('Admin identity is required.'); if (!reason.trim()) throw new Error('A reason is required for an admin credit.')
       const now = stamp(); return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'credit', kind: 'Adjustment', category: 'Admin adjustment', description: 'Simulated administrative credit', counterparty: 'FOXSYCU Admin', memo: `${reason.trim()} · Admin ${adminId.trim()}`, ...parts(now), amount, currency: 'USD', status: 'Completed', reference: id('ADM'), createdAt: now }))
     },
-    reset: () => { state = seed; if (typeof window !== 'undefined') window.localStorage.removeItem(STORAGE_KEY); return state },
+    reset: () => { state = seed; hasLocalRuntimeState = false; if (typeof window !== 'undefined') window.localStorage.removeItem(STORAGE_KEY); return state },
   }
 }
