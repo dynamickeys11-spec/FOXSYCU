@@ -10,6 +10,7 @@ import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import './styles.css'
 import './core-banking.css'
+import './security-v2.css'
 
 function ProtectedRoot() {
   const location = useLocation()
