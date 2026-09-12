@@ -11,6 +11,7 @@ import { supabase } from './supabaseClient'
 import './styles.css'
 import './core-banking.css'
 import './security-v2.css'
+import './main-five-reference.css'
 
 function ProtectedRoot(){const location=useLocation();const navigate=useNavigate();const {session,loading}=useCustomerData();const [aalReady,setAalReady]=useState(false);const [needsMfa,setNeedsMfa]=useState(false)
 useEffect(()=>{let active=true;const check=async()=>{if(!session){setAalReady(false);setNeedsMfa(false);return};const {data,error}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();if(!active)return;if(error||data.nextLevel!=='aal2'||data.currentLevel==='aal2'){setNeedsMfa(false);setAalReady(true);return};const recoveryGrant=sessionStorage.getItem('foxsycu.mfa.recovery.grant');if(recoveryGrant){const {data:grant}=await supabase.rpc('has_mfa_recovery_grant',{p_grant_token:recoveryGrant});if(grant?.valid){setNeedsMfa(false);setAalReady(true);return};sessionStorage.removeItem('foxsycu.mfa.recovery.grant')}setNeedsMfa(true);setAalReady(true)};void check();return()=>{active=false}},[session])
