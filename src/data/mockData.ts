@@ -34,13 +34,13 @@ months.forEach(([month, year], index) => {
 })
 
 historicalTransactions.push(
-  { id: 'TX-20260901-001', kind: 'Interest', description: 'Savings interest credit', date: 'Sep 01, 2026', time: '12:03 AM', amount: 1842.36, currency: 'USD', status: 'Completed', reference: 'INT-20260901-0001', category: 'Interest', counterparty: 'FOXSYCU Savings Engine' },
+  { id: 'TX-20260901-001', kind: 'Interest', description: 'Savings interest credit', date: 'Sep 01, 2026', time: '12:03 AM', amount: 1842.36, currency: 'USD', status: 'Completed', reference: 'INT-20260901-0001', category: 'Interest', counterparty: 'FNCU Savings Engine' },
   { id: 'TX-20260902-002', kind: 'Deposit', description: 'Business income deposit', date: 'Sep 02, 2026', time: '09:08 AM', amount: 98500, currency: 'USD', status: 'Completed', reference: 'ACH-20260902-1847', category: 'Income', counterparty: 'Business operating account' },
   { id: 'TX-20260904-003', kind: 'Card Purchase', description: 'Card purchase — Adobe', date: 'Sep 04, 2026', time: '01:42 PM', amount: -84.50, currency: 'USD', status: 'Completed', reference: 'CARD-20260904-4821', category: 'Software', counterparty: 'Adobe' },
   { id: 'TX-20260905-004', kind: 'Card Purchase', description: 'Card purchase — office supply', date: 'Sep 05, 2026', time: '03:26 PM', amount: -2860.40, currency: 'USD', status: 'Completed', reference: 'CARD-20260905-6194', category: 'Office', counterparty: 'Office Depot' },
   { id: 'TX-20260906-005', kind: 'Transfer', description: 'Transfer to Alex Smith', date: 'Sep 06, 2026', time: '04:05 PM', amount: -12000, currency: 'USD', status: 'Completed', reference: 'TRF-20260906-73184', category: 'Transfer', counterparty: 'Alex Smith' },
   { id: 'TX-20260907-006', kind: 'Card Purchase', description: 'Card purchase — travel', date: 'Sep 07, 2026', time: '10:31 AM', amount: -7850, currency: 'USD', status: 'Completed', reference: 'CARD-20260907-4821', category: 'Travel', counterparty: 'Travel services' },
-  { id: 'TX-20260909-007', kind: 'Fee', description: 'Monthly account service fee', date: 'Sep 09, 2026', time: '08:00 AM', amount: -41.25, currency: 'USD', status: 'Completed', reference: 'FEE-20260909-0009', category: 'Banking fee', counterparty: 'FOXSYCU' },
+  { id: 'TX-20260909-007', kind: 'Fee', description: 'Monthly account service fee', date: 'Sep 09, 2026', time: '08:00 AM', amount: -41.25, currency: 'USD', status: 'Completed', reference: 'FEE-20260909-0009', category: 'Banking fee', counterparty: 'FNCU' },
   { id: 'TX-20260910-008', kind: 'Deposit', description: 'USD transfer received', date: 'Sep 10, 2026', time: '02:41 PM', amount: 26500, currency: 'USD', status: 'Completed', reference: 'DEP-20260910-0042', category: 'Transfer', counterparty: 'Linked USD account' },
   { id: 'TX-20260911-009', kind: 'Transfer', description: 'Transfer to savings vault', date: 'Sep 11, 2026', time: '09:21 AM', amount: -25000, currency: 'USD', status: 'Pending', reference: 'TRF-20260911-0091', category: 'Savings', counterparty: 'Emergency Reserve Vault' },
 )
