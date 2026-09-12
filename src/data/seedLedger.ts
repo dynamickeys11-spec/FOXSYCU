@@ -1,0 +1,53 @@
+import type { LedgerEntry, AccountLedger } from './ledger'
+
+const entry = (id: string, date: string, kind: LedgerEntry['kind'], description: string, amount: number, entryType: 'credit' | 'debit', reference: string, category: string, counterparty?: string): LedgerEntry => ({
+  id,
+  accountId: 'checking-usd-4821',
+  entryType,
+  kind,
+  category,
+  description,
+  counterparty,
+  date,
+  time: '12:00 PM',
+  amount,
+  currency: 'USD',
+  status: 'Completed',
+  reference,
+  synthetic: true,
+  createdAt: `${date}T12:00:00.000Z`,
+})
+
+// Synthetic history only. Opening balance plus all completed entries reconciles exactly to $5,000,000.
+export const seedLedger: AccountLedger = {
+  accountId: 'checking-usd-4821',
+  currency: 'USD',
+  openingBalance: 250000,
+  entries: [
+    entry('TX-2026-001', 'Sep 10, 2026', 'Interest', 'Savings interest credit', 18420.55, 'credit', 'INT-20260910-001', 'Interest'),
+    entry('TX-2026-002', 'Sep 04, 2026', 'Transfer', 'Transfer to Northstar Holdings', 85000, 'debit', 'TRF-20260904-001', 'Beneficiary transfer', 'Northstar Holdings'),
+    entry('TX-2026-003', 'Aug 29, 2026', 'Deposit', 'Portfolio funding credit', 450000, 'credit', 'DEP-20260829-001', 'Funding'),
+    entry('TX-2026-004', 'Aug 14, 2026', 'Transfer', 'Transfer to Alex Smith', 125000, 'debit', 'TRF-20260814-001', 'Beneficiary transfer', 'Alex Smith'),
+    entry('TX-2026-005', 'Jul 31, 2026', 'Deposit', 'Simulated investment proceeds', 600000, 'credit', 'DEP-20260731-001', 'Funding'),
+    entry('TX-2025-001', 'Dec 18, 2025', 'Transfer', 'Annual property payment', 320000, 'debit', 'TRF-20251218-001', 'Property', 'Property Services'),
+    entry('TX-2025-002', 'Nov 03, 2025', 'Deposit', 'Portfolio distribution', 900000, 'credit', 'DEP-20251103-001', 'Funding'),
+    entry('TX-2025-003', 'Sep 22, 2025', 'Transfer', 'Transfer to Maria Johnson', 180000, 'debit', 'TRF-20250922-001', 'Beneficiary transfer', 'Maria Johnson'),
+    entry('TX-2025-004', 'Jun 30, 2025', 'Deposit', 'Simulated asset sale proceeds', 1250000, 'credit', 'DEP-20250630-001', 'Funding'),
+    entry('TX-2025-005', 'Mar 14, 2025', 'Transfer', 'Education and family transfer', 95000, 'debit', 'TRF-20250314-001', 'Beneficiary transfer', 'Alex Smith'),
+    entry('TX-2024-001', 'Dec 20, 2024', 'Deposit', 'Annual investment distribution', 725000, 'credit', 'DEP-20241220-001', 'Funding'),
+    entry('TX-2024-002', 'Oct 11, 2024', 'Transfer', 'Property acquisition payment', 410000, 'debit', 'TRF-20241011-001', 'Property', 'Northstar Holdings'),
+    entry('TX-2024-003', 'Jul 05, 2024', 'Deposit', 'Business proceeds', 550000, 'credit', 'DEP-20240705-001', 'Funding'),
+    entry('TX-2024-004', 'Apr 19, 2024', 'Transfer', 'Family transfer', 110000, 'debit', 'TRF-20240419-001', 'Beneficiary transfer', 'Maria Johnson'),
+    entry('TX-2023-001', 'Dec 15, 2023', 'Deposit', 'Investment proceeds', 475000, 'credit', 'DEP-20231215-001', 'Funding'),
+    entry('TX-2023-002', 'Sep 08, 2023', 'Transfer', 'Property deposit', 210000, 'debit', 'TRF-20230908-001', 'Property', 'Northstar Holdings'),
+    entry('TX-2023-003', 'May 26, 2023', 'Deposit', 'Business proceeds', 380000, 'credit', 'DEP-20230526-001', 'Funding'),
+    entry('TX-2023-004', 'Feb 17, 2023', 'Transfer', 'Family support transfer', 75000, 'debit', 'TRF-20230217-001', 'Beneficiary transfer', 'Alex Smith'),
+    entry('TX-2022-001', 'Nov 30, 2022', 'Deposit', 'Investment proceeds', 310000, 'credit', 'DEP-20221130-001', 'Funding'),
+    entry('TX-2022-002', 'Aug 12, 2022', 'Transfer', 'Property payment', 145000, 'debit', 'TRF-20220812-001', 'Property', 'Northstar Holdings'),
+    entry('TX-2022-003', 'Apr 22, 2022', 'Deposit', 'Business proceeds', 275000, 'credit', 'DEP-20220422-001', 'Funding'),
+    entry('TX-2022-004', 'Jan 14, 2022', 'Transfer', 'Family support transfer', 65000, 'debit', 'TRF-20220114-001', 'Beneficiary transfer', 'Maria Johnson'),
+    entry('TX-2021-001', 'Dec 17, 2021', 'Deposit', 'Initial portfolio funding', 320000, 'credit', 'DEP-20211217-001', 'Funding'),
+    entry('TX-2021-002', 'Sep 03, 2021', 'Transfer', 'Initial property payment', 90000, 'debit', 'TRF-20210903-001', 'Property', 'Northstar Holdings'),
+    entry('TX-2021-003', 'Jun 18, 2021', 'Deposit', 'Initial business proceeds', 180000, 'credit', 'DEP-20210618-001', 'Funding'),
+  ],
+}
