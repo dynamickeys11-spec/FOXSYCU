@@ -31,17 +31,18 @@ async function ensureCustomer(userId: string) {
     if (created.error) throw created.error
     account = created.data
   } else {
-    const aligned = await supabase.from('accounts').update({ account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).eq('id', account.id).select('*').single()
+    const aligned = await supabase.from('accounts').update({ account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active' }).eq('id', account.id).select('*').single()
     if (aligned.error) throw aligned.error
     account = aligned.data
   }
   const existingVaults = await supabase.from('savings_vaults').select('*').eq('user_id', userId).order('created_at')
   if (!existingVaults.data?.length) {
-    await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' })))
+    const createdVaults = await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' })))
+    if (createdVaults.error) throw createdVaults.error
   } else {
     for (let i = 0; i < Math.min(existingVaults.data.length, CANONICAL_VAULTS.length); i += 1) {
       const v = CANONICAL_VAULTS[i]
-      const result = await supabase.from('savings_vaults').update({ name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' }).eq('id', existingVaults.data[i].id)
+      const result = await supabase.from('savings_vaults').update({ name: v.name, target_amount: v.target, apy: v.apy, status: 'active' }).eq('id', existingVaults.data[i].id)
       if (result.error) throw result.error
     }
   }
