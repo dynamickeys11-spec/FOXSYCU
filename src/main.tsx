@@ -6,12 +6,12 @@ import { MFAChallenge } from './MFAChallenge'
 import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import App from './AppLedger'
+import ProfilePage from './ProfilePage'
 import './styles.css'
 import './functional-ui.css'
 import './auth.css'
 import './ledger-shell.css'
 
-// FOXSYCU canonical application shell: AppLedger preserves the original banking UI.
 function ProtectedRoot(){
   const {session,loading}=useCustomerData()
   const [aalReady,setAalReady]=useState(false)
@@ -40,5 +40,16 @@ function ProtectedRoot(){
   if(needsMfa)return <MFAChallenge onVerified={()=>setNeedsMfa(false)}/>
   return <App/>
 }
-function Root(){const location=useLocation();const navigate=useNavigate();useEffect(()=>{if(location.pathname==='/private-banking')navigate('/profile',{replace:true})},[location.pathname,navigate]);if(location.pathname==='/login')return <AuthPage/>;return <CustomerProvider><ProtectedRoot/></CustomerProvider>}
+function Root(){
+  const location=useLocation();const navigate=useNavigate()
+  useEffect(()=>{if(location.pathname==='/private-banking')navigate('/profile',{replace:true})},[location.pathname,navigate])
+  if(location.pathname==='/login')return <AuthPage/>
+  return <CustomerProvider>{location.pathname==='/profile'?<ProtectedProfile/>:<ProtectedRoot/>}</CustomerProvider>
+}
+function ProtectedProfile(){
+  const {session,loading}=useCustomerData()
+  if(loading)return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',fontFamily:'Inter,system-ui,sans-serif'}}>Loading FOXSYCU…</main>
+  if(!session)return <AuthPage/>
+  return <ProfilePage/>
+}
 createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><Root/></BrowserRouter></StrictMode>)
