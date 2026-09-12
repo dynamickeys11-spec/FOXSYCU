@@ -45,6 +45,7 @@ export function createRuntimeVault(name: string, target: number): Vault {
     apy: customer.apy,
     target: Math.round(target * 100) / 100,
     interestEarned: 0,
+    opened: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
   }
 
   const vaults = [...customer.vaults, vault]
