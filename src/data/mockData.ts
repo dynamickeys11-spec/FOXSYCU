@@ -1,7 +1,7 @@
 import type { CustomerSnapshot } from '../types'
 
 export const customer: CustomerSnapshot = {
-  name: 'Yomi Ade',
+  name: 'John Doe',
   membership: 'Premium User',
   currency: 'USD',
   availableBalance: 12450,
