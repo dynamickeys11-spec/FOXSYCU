@@ -18,7 +18,7 @@ export interface Vault {
   name: string
   balance: number
   apy: number
-  target?: number
+  target: number
 }
 
 export interface CustomerSnapshot {
