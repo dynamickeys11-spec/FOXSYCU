@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "prepare:app": "node scripts/prepare-app.mjs",
+    "build": "npm run prepare:app && tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
