@@ -4,7 +4,7 @@ const path = 'src/App.tsx'
 let source = fs.readFileSync(path, 'utf8')
 if (source.includes('FOXSYCU_RUNTIME_WIRED')) process.exit(0)
 
-source = source.replace("import { useState } from 'react'", "import { useEffect, useState } from 'react'")
+source = source.replace("import { useState } from 'react'", "import { useState } from 'react'")
 source = source.replace("import { customer } from './data/mockData'", "import { customer } from './data/mockData'\nimport { refreshCustomerSnapshot, runtimeEngine, useRuntimeRefresh } from './data/runtimeBanking'")
 
 const transfersStart = source.indexOf('function Transfers() {')
@@ -56,7 +56,10 @@ const transfers = `function Transfers() {
 
 `
 source = source.slice(0, transfersStart) + transfers + source.slice(transactionsStart)
-source = source.replace(/function App\(\)\s*\{/, match => `${match}\n  // FOXSYCU_RUNTIME_WIRED\n  useRuntimeRefresh()`)
+const shell = source.indexOf('function Shell({ children }')
+const shellOpen = shell === -1 ? -1 : source.indexOf('{', shell)
+if (shellOpen === -1) throw new Error('Could not locate Shell component')
+source = source.slice(0, shellOpen + 1) + '\n  // FOXSYCU_RUNTIME_WIRED\n  useRuntimeRefresh()' + source.slice(shellOpen + 1)
 source = source.replace('to="/transfers" className="secondary">View activity', 'to="/transactions" className="secondary">View activity')
 source = source.replace('<div className="chart-value">$12,450.00', '<div className="chart-value">{money(customer.availableBalance)}')
 fs.writeFileSync(path, source)
