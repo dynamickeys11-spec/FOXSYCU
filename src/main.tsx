@@ -7,6 +7,7 @@ import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import App from './App'
 import './styles.css'
+import './functional-ui.css'
 import './auth.css'
 
 function ProtectedRoot(){const {session,loading}=useCustomerData();const [aalReady,setAalReady]=useState(false);const [needsMfa,setNeedsMfa]=useState(false)
