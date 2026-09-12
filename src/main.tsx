@@ -26,6 +26,12 @@ function ProtectedRoot() {
       const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
       if (!active) return
       if (error || data.nextLevel !== 'aal2' || data.currentLevel === 'aal2') { setNeedsMfa(false); setAalReady(true); return }
+      const recoveryGrant = sessionStorage.getItem('foxsycu.mfa.recovery.grant')
+      if (recoveryGrant) {
+        const { data: grant } = await supabase.rpc('has_mfa_recovery_grant', { p_grant_token: recoveryGrant })
+        if (grant?.valid) { setNeedsMfa(false); setAalReady(true); return }
+        sessionStorage.removeItem('foxsycu.mfa.recovery.grant')
+      }
       setNeedsMfa(true); setAalReady(true)
     }
     void check()
