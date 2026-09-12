@@ -55,13 +55,6 @@ export interface CustomerSnapshot {
   interestEarned: number
   transactions: Transaction[]
   vaults: Vault[]
-  savingsVaults?: Vault[]
-  account?: {
-    id: string
-    type: 'checking'
-    currency: 'USD'
-    last4: string
-    openingBalance: number
-    opened: string
-  }
+  savingsVaults: Vault[]
+  account?: { id: string; type: 'checking'; currency: 'USD'; last4: string; openingBalance: number; opened: string }
 }
