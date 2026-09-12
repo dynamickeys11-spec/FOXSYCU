@@ -5,6 +5,7 @@ import { customer as seed } from './data/mockData'
 import type { Transaction } from './types'
 import { addTransaction } from './ledgerStore'
 import './world-v2.css'
+import './ux-audit.css'
 
 const ACCOUNT = '•••• 4821'
 const SAVINGS = '•••• 7814'
@@ -19,7 +20,7 @@ const nav = [
   ['Savings', '/savings', PiggyBank],
   ['Cards', '/cards', CreditCard],
   ['Statements & Documents', '/statements', FileText],
-  ['Security Center', '/settings', ShieldCheck],
+  ['Security Center', '/security', ShieldCheck],
   ['Settings', '/settings', Settings],
 ] as const
 
@@ -61,37 +62,37 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="customer-chip"><span>JD</span><div><b>John Doe</b><small>Premium · USD</small></div></div>
         <div className="nav-label">BANKING</div>
-        <nav>
+        <nav aria-label="Primary banking navigation">
           {nav.map(([label, path, Icon]) => (
             <NavLink key={label} to={path} end={path === '/'} onClick={() => setOpen(false)} className={({ isActive }) => `bank-link ${isActive ? 'active' : ''}`}>
-              <Icon size={17} /><span>{label}</span>
+              <Icon size={17} aria-hidden="true" /><span>{label}</span>
             </NavLink>
           ))}
         </nav>
-        <div className="security-foot"><ShieldCheck size={16} /><div><b>Protected</b><small>Security center</small></div></div>
+        <NavLink className="security-foot" to="/security" aria-label="Open Security Center"><ShieldCheck size={16} /><div><b>Protected</b><small>Security center</small></div></NavLink>
       </aside>
 
       <div className="bank-body">
         <header className="bank-header">
-          <button className="menu-button" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={20} /></button>
+          <button className="menu-button" onClick={() => setOpen(true)} aria-label="Open banking menu"><Menu size={20} /></button>
           <div className="header-title">PERSONAL BANKING</div>
           <div className="header-actions">
             <div className="global-search">
-              <Search size={16} />
-              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search activity" />
+              <Search size={16} aria-hidden="true" />
+              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search activity" aria-label="Search account activity" />
               {query && <button onClick={() => setQuery('')} aria-label="Clear search"><X size={14} /></button>}
               {query && <div className="search-results">{matches.length ? matches.map(t => <NavLink key={t.id} to="/transactions" onClick={() => setQuery('')}><b>{t.description}</b><strong>{money(t.amount)}</strong><small>{t.date} · {t.reference}</small></NavLink>) : <span>No matching activity</span>}</div>}
             </div>
-            <button className="icon-button" aria-label="Notifications"><Bell size={18} /><i /></button>
-            <NavLink to="/settings" className="profile"><span>JD</span><div><b>John Doe</b><small>Premium User</small></div></NavLink>
+            <NavLink className="icon-button" to="/communication" aria-label="Open notifications and secure mailbox"><Bell size={18} /><i /></NavLink>
+            <NavLink to="/private-banking" className="profile" aria-label="Open private banking profile"><span>JD</span><div><b>John Doe</b><small>Premium User</small></div></NavLink>
           </div>
         </header>
         <main className="bank-content">{children}</main>
       </div>
 
-      <nav className="mobile-nav">
-        {([['Home', '/', Home], ['Savings', '/savings', PiggyBank], ['Activity', '/transactions', Activity], ['Move', '/transfers', MoveRight], ['Profile', '/settings', Settings]] as const).map(([label, path, Icon]) => (
-          <NavLink key={label} to={path} end={path === '/'}><Icon size={18} /><span>{label}</span></NavLink>
+      <nav className="mobile-nav" aria-label="Mobile banking navigation">
+        {([['Home', '/', Home], ['Savings', '/savings', PiggyBank], ['Activity', '/transactions', Activity], ['Move', '/transfers', MoveRight], ['Profile', '/private-banking', Settings]] as const).map(([label, path, Icon]) => (
+          <NavLink key={label} to={path} end={path === '/'}><Icon size={18} aria-hidden="true" /><span>{label}</span></NavLink>
         ))}
       </nav>
     </div>
@@ -103,7 +104,7 @@ function Card({ title, note, children, link }: { title: string; note: string; ch
 }
 
 function TransactionRow({ t, onClick }: { t: Transaction; onClick?: () => void }) {
-  return <button className="transaction-row" onClick={onClick}><span className={`transaction-icon ${t.amount >= 0 ? 'credit' : 'debit'}`}>{t.amount >= 0 ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}</span><span className="transaction-copy"><b>{t.description}</b><small>{t.counterparty || t.category || t.kind} · {t.date}</small></span><span className="transaction-value"><strong className={t.amount >= 0 ? 'positive' : ''}>{t.amount >= 0 ? '+' : ''}{money(t.amount)}</strong><small>{t.status}</small></span><ChevronRight size={15} /></button>
+  return <button className="transaction-row" onClick={onClick} aria-label={`View transaction ${t.description}, ${t.status}`}><span className={`transaction-icon ${t.amount >= 0 ? 'credit' : 'debit'}`}>{t.amount >= 0 ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}</span><span className="transaction-copy"><b>{t.description}</b><small>{t.counterparty || t.category || t.kind} · {t.date}</small></span><span className="transaction-value"><strong className={t.amount >= 0 ? 'positive' : ''}>{t.amount >= 0 ? '+' : ''}{money(t.amount)}</strong><small>{t.status}</small></span><ChevronRight size={15} aria-hidden="true" /></button>
 }
 
 function Dashboard() {
@@ -139,27 +140,44 @@ function Transfers() {
   const balance = transactions.filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.amount, 125000)
   const value = Number(amount) || 0
   const fee = mode === 'wire' ? 15 : 0
+  const isDeposit = mode === 'deposit'
+  const canContinue = value > 0 && (isDeposit || value + fee <= balance)
+  const actionLabel = isDeposit ? 'Review deposit' : 'Review & authorize'
+  const totalImpact = isDeposit ? value : -(value + fee)
 
   const confirm = () => {
-    if (!value || value + fee > balance) return
+    if (!canContinue) return
     const now = new Date()
     const ref = `FX-${now.toISOString().slice(0, 10).replaceAll('-', '')}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
-    const transaction: Transaction = { id: ref, kind: 'Transfer', description: mode === 'zelle' ? `Zelle payment to ${recipient}` : mode === 'wire' ? `Domestic wire to ${recipient}` : `Transfer to ${recipient}`, date: now.toISOString().slice(0, 10), time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }), amount: -(value + fee), currency: 'USD', status: 'Completed', reference: ref, category: mode === 'zelle' ? 'Zelle' : mode === 'wire' ? 'Domestic wire' : 'ACH transfer', counterparty: recipient }
+    const transaction: Transaction = {
+      id: ref,
+      kind: isDeposit ? 'Deposit' : 'Transfer',
+      description: isDeposit ? 'Cash deposit to Private Checking' : mode === 'zelle' ? `Zelle payment to ${recipient}` : mode === 'wire' ? `Domestic wire to ${recipient}` : `Transfer to ${recipient}`,
+      date: now.toISOString().slice(0, 10),
+      time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      amount: totalImpact,
+      currency: 'USD',
+      status: 'Completed',
+      reference: ref,
+      category: isDeposit ? 'Cash deposit' : mode === 'zelle' ? 'Zelle' : mode === 'wire' ? 'Domestic wire' : 'ACH transfer',
+      counterparty: isDeposit ? 'FOXSYCU Checking' : recipient,
+      metadata: { synthetic: true, rail: isDeposit ? 'CASH_DEPOSIT' : mode.toUpperCase() },
+    }
     addTransaction(transaction)
     setDone(transaction)
     setReview(false)
   }
 
-  if (done) return <><Header eyebrow="TRANSFER CONFIRMED" title="Transfer completed" description="The transaction has been posted to your account." /><section className="receipt"><div className="success-mark">✓</div><span>COMPLETED</span><strong>{money(Math.abs(done.amount))}</strong><p>{done.description}</p><div className="receipt-grid"><div><span>Reference</span><b>{done.reference}</b></div><div><span>Recipient</span><b>{recipient}</b></div><div><span>New available balance</span><b>{money(balance + done.amount)}</b></div></div><div className="receipt-actions"><button className="secondary-btn" onClick={() => setDone(null)}>Make another</button><button className="primary-btn" onClick={() => navigate('/transactions')}>View activity</button></div></section></>
+  if (done) return <><Header eyebrow={isDeposit ? 'DEPOSIT CONFIRMED' : 'TRANSFER CONFIRMED'} title={isDeposit ? 'Deposit completed' : 'Transfer completed'} description="The transaction has been posted to your account." /><section className="receipt"><div className="success-mark">✓</div><span>COMPLETED</span><strong>{money(Math.abs(done.amount))}</strong><p>{done.description}</p><div className="receipt-grid"><div><span>Reference</span><b>{done.reference}</b></div><div><span>{isDeposit ? 'Account' : 'Recipient'}</span><b>{isDeposit ? `Private Checking ${ACCOUNT}` : recipient}</b></div><div><span>New available balance</span><b>{money(balance + done.amount)}</b></div></div><div className="receipt-actions"><button className="secondary-btn" onClick={() => { setDone(null); setAmount('') }}>Make another</button><button className="primary-btn" onClick={() => navigate('/transactions')}>View activity</button></div></section></>
 
-  return <><Header eyebrow="MOVE MONEY" title="Transfers & payments" description="Choose a payment rail and review every detail before authorization." /><div className="rail-tabs">{[['transfer', 'Transfer'], ['wire', 'Wire'], ['zelle', 'Zelle'], ['deposit', 'Deposit']].map(([id, label]) => <button key={id} className={mode === id ? 'active' : ''} onClick={() => setMode(id)}>{label}</button>)}</div><div className="transfer-grid"><Card title={mode === 'wire' ? 'Domestic wire' : mode === 'zelle' ? 'Send with Zelle' : mode === 'deposit' ? 'Deposit funds' : 'Transfer money'} note="Secure transaction authorization"><label className="field">Recipient<select value={recipient} onChange={e => setRecipient(e.target.value)}>{seed.beneficiaries.map(b => <option key={b.id}>{b.name}</option>)}</select></label><label className="field">Amount<input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.00" inputMode="decimal" /></label><div className="secure-note"><ShieldCheck size={16} />Available balance {money(balance)}</div><button className="primary-btn full" disabled={!value || value + fee > balance} onClick={() => setReview(true)}>Review & authorize</button></Card><aside className="bank-card transfer-summary"><span>TRANSACTION SUMMARY</span><div><small>From</small><b>Private Checking {ACCOUNT}</b></div><div><small>Recipient</small><b>{recipient}</b></div><div><small>Amount</small><b>{money(value)}</b></div><div><small>Fee</small><b>{money(fee)}</b></div><div className="summary-total"><span>Total debit</span><strong>{money(value + fee)}</strong></div></aside></div>{review && <div className="modal"><section className="confirm"><button className="close" onClick={() => setReview(false)}><X size={18} /></button><span>REVIEW & AUTHORIZE</span><h2>Confirm transaction</h2><strong>{money(value + fee)}</strong><p>{mode === 'zelle' ? 'Zelle payment' : mode === 'wire' ? 'Domestic wire' : 'Transfer'} · {recipient}</p><div className="modal-actions"><button className="secondary-btn" onClick={() => setReview(false)}>Cancel</button><button className="primary-btn" onClick={confirm}>Confirm transfer</button></div></section></div>}</>
+  return <><Header eyebrow="MOVE MONEY" title="Transfers & payments" description="Choose a payment rail and review every detail before authorization." /><div className="rail-tabs" role="tablist" aria-label="Money movement type">{[['transfer', 'Transfer'], ['wire', 'Wire'], ['zelle', 'Zelle'], ['deposit', 'Deposit']].map(([id, label]) => <button key={id} role="tab" aria-selected={mode === id} className={mode === id ? 'active' : ''} onClick={() => { setMode(id); setAmount('') }}>{label}</button>)}</div><div className="transfer-grid"><Card title={mode === 'wire' ? 'Domestic wire' : mode === 'zelle' ? 'Send with Zelle' : isDeposit ? 'Deposit funds' : 'Transfer money'} note={isDeposit ? 'Add funds to your checking account' : 'Secure transaction authorization'}>{!isDeposit && <label className="field">Recipient<select value={recipient} onChange={e => setRecipient(e.target.value)}>{seed.beneficiaries.map(b => <option key={b.id}>{b.name}</option>)}</select></label>}<label className="field">Amount<input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.00" inputMode="decimal" aria-label="Transaction amount" /></label><div className="secure-note"><ShieldCheck size={16} />{isDeposit ? 'Funds will be added to available balance after confirmation.' : `Available balance ${money(balance)}`}</div><button className="primary-btn full" disabled={!canContinue} onClick={() => setReview(true)}>{actionLabel}</button></Card><aside className="bank-card transfer-summary"><span>TRANSACTION SUMMARY</span><div><small>{isDeposit ? 'To' : 'From'}</small><b>Private Checking {ACCOUNT}</b></div>{!isDeposit && <div><small>Recipient</small><b>{recipient}</b></div>}<div><small>Amount</small><b>{money(value)}</b></div><div><small>Fee</small><b>{money(fee)}</b></div><div className="summary-total"><span>{isDeposit ? 'Account credit' : 'Total debit'}</span><strong>{money(isDeposit ? value : value + fee)}</strong></div></aside></div>{review && <div className="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title"><section className="confirm"><button className="close" onClick={() => setReview(false)} aria-label="Close review"><X size={18} /></button><span>{isDeposit ? 'REVIEW DEPOSIT' : 'REVIEW & AUTHORIZE'}</span><h2 id="confirm-title">{isDeposit ? 'Confirm deposit' : 'Confirm transaction'}</h2><strong>{money(isDeposit ? value : value + fee)}</strong><p>{isDeposit ? 'Cash deposit' : mode === 'zelle' ? 'Zelle payment' : mode === 'wire' ? 'Domestic wire' : 'Transfer'}{!isDeposit && ` · ${recipient}`}</p><div className="confirm-lines"><div><span>{isDeposit ? 'Credit to' : 'From'}</span><b>Private Checking {ACCOUNT}</b></div>{!isDeposit && <div><span>Recipient</span><b>{recipient}</b></div>}<div><span>Fee</span><b>{money(fee)}</b></div></div><div className="modal-actions"><button className="secondary-btn" onClick={() => setReview(false)}>Cancel</button><button className="primary-btn" onClick={confirm}>{isDeposit ? 'Confirm deposit' : 'Confirm transfer'}</button></div></section></div>}</>
 }
 
 function Transactions() {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Transaction | null>(null)
   const transactions = getTransactions().filter(t => `${t.description} ${t.counterparty ?? ''} ${t.reference}`.toLowerCase().includes(query.toLowerCase()))
-  return <><Header eyebrow="TRANSACTIONS" title="Activity" description="Search and review your account activity." /><div className="transaction-toolbar"><div><Search size={16} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name or reference" /></div></div><Card title="All activity" note={`${transactions.length} transactions`}>{transactions.map(t => <TransactionRow key={t.id} t={t} onClick={() => setSelected(t)} />)}</Card>{selected && <div className="drawer-back" onClick={() => setSelected(null)}><aside className="transaction-drawer" onClick={e => e.stopPropagation()}><button className="close" onClick={() => setSelected(null)}><X size={18} /></button><span>TRANSACTION DETAILS</span><h2>{selected.description}</h2><strong className={selected.amount >= 0 ? 'positive' : ''}>{selected.amount >= 0 ? '+' : ''}{money(selected.amount)}</strong><p>{selected.status}</p><div className="drawer-line"><span>Date</span><b>{selected.date} · {selected.time}</b></div><div className="drawer-line"><span>Reference</span><b>{selected.reference}</b></div><div className="drawer-line"><span>Counterparty</span><b>{selected.counterparty || '—'}</b></div></aside></div>}</>
+  return <><Header eyebrow="TRANSACTIONS" title="Activity" description="Search and review your account activity." /><div className="transaction-toolbar"><div><Search size={16} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name or reference" aria-label="Search transactions" /></div></div><Card title="All activity" note={`${transactions.length} transactions`}>{transactions.map(t => <TransactionRow key={t.id} t={t} onClick={() => setSelected(t)} />)}</Card>{selected && <div className="drawer-back" onClick={() => setSelected(null)}><aside className="transaction-drawer" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="transaction-title"><button className="close" onClick={() => setSelected(null)} aria-label="Close transaction details"><X size={18} /></button><span>TRANSACTION DETAILS</span><h2 id="transaction-title">{selected.description}</h2><strong className={selected.amount >= 0 ? 'positive' : ''}>{selected.amount >= 0 ? '+' : ''}{money(selected.amount)}</strong><p>{selected.status}</p><div className="drawer-line"><span>Date</span><b>{selected.date} · {selected.time}</b></div><div className="drawer-line"><span>Reference</span><b>{selected.reference}</b></div><div className="drawer-line"><span>Counterparty</span><b>{selected.counterparty || '—'}</b></div></aside></div>}</>
 }
 
 function Savings() { return <><Header eyebrow="SAVE" title="Savings" description="Three USD savings vaults earning interest." /><div className="vault-grid">{seed.savingsVaults.map(v => <article className="bank-card vault" key={v.id}><span>{v.name.toUpperCase()}</span><h2>{money(v.balance)}</h2><p>Target {money(v.target)}</p><div className="progress"><i style={{ width: `${Math.min(100, (v.balance / v.target) * 100)}%` }} /></div><small>{money(v.interestEarned || 0)} interest earned</small></article>)}</div></> }
@@ -177,6 +195,6 @@ export default function WorldBankingV2() {
   else if (path === '/cards') page = <Cards />
   else if (path === '/statements') page = <Statements />
   else if (path === '/beneficiaries') page = <Simple eyebrow="MONEY" title="Beneficiaries" description="Manage verified recipients for transfers and payments." />
-  else if (path === '/settings') page = <Simple eyebrow="SECURITY" title="Security Center" description="Protect your account, sessions and transaction authorization." />
+  else if (path === '/settings') page = <Simple eyebrow="SETTINGS" title="Settings" description="Manage your profile and banking preferences." />
   return <Shell>{page}</Shell>
 }
