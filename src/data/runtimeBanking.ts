@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react'
 import { customer, ledger } from './mockData'
 import { amountForEntry } from './ledger'
-import { createTransactionEngine } from './transactionEngine'
+import { createRuntimeTransactionEngine } from './runtimeTransactionEngine'
 
-export const runtimeEngine = createTransactionEngine(ledger)
+export const runtimeEngine = createRuntimeTransactionEngine(ledger)
 
 export function refreshCustomerSnapshot() {
   const current = runtimeEngine.getLedger()
   customer.availableBalance = runtimeEngine.getAvailableBalance()
-  customer.transactions = current.entries.map(entry => ({
-    ...entry,
-    amount: amountForEntry(entry),
-  }))
+  customer.transactions = current.entries.map(entry => ({ ...entry, amount: amountForEntry(entry) }))
   customer.interestEarned = Math.round(current.entries.filter(entry => entry.kind === 'Interest' && entry.entryType === 'credit' && entry.status === 'Completed').reduce((sum, entry) => sum + Math.abs(entry.amount), 0) * 100) / 100
 }
 
