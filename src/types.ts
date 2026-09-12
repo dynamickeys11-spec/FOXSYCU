@@ -48,5 +48,6 @@ export interface CustomerSnapshot {
   accountType: string; accountStatus: string; availableBalance: number; savingsBalance: number
   pendingBalance: number; apy: number; interestEarned: number; transactions: Transaction[]
   vaults: Vault[]
+  savingsVaults: Vault[]
   beneficiaries: { id: string; name: string; accountLast4: string; currency: 'USD'; added: string }[]
 }
