@@ -32,9 +32,35 @@ function buildSyntheticLedger(): AccountLedger {
 
 export const ledger = buildSyntheticLedger()
 assertReconciled(ledger, TARGET_BALANCE)
-const vaults = [{ id: 'v1', name: 'Emergency Vault', balance: 250_000, apy: 4.5, target: 300_000 }, { id: 'v2', name: 'Property Deposit', balance: 300_000, apy: 4.5, target: 500_000 }, { id: 'v3', name: 'Travel Vault', balance: 75_000, apy: 4.5, target: 100_000 }]
+const vaults = [
+  { id: 'v1', name: 'Emergency Vault', balance: 250_000, apy: 4.5, target: 300_000, opened: 'April 2021' },
+  { id: 'v2', name: 'Property Deposit', balance: 300_000, apy: 4.5, target: 500_000, opened: 'June 2022' },
+  { id: 'v3', name: 'Travel Vault', balance: 75_000, apy: 4.5, target: 100_000, opened: 'March 2024' },
+]
 const transactions: Transaction[] = ledger.entries.map(entry => ({ ...entry }))
 const savingsBalance = money(vaults.reduce((sum, vault) => sum + vault.balance, 0))
 const interestEarned = money(savingsBalance * 0.045 / 12)
+const beneficiaries = [
+  { id: 'b1', name: 'Alex Smith', accountLast4: '1920', added: 'April 2022' },
+  { id: 'b2', name: 'Maria Johnson', accountLast4: '4472', added: 'November 2023' },
+  { id: 'b3', name: 'Northstar Holdings', accountLast4: '8104', added: 'January 2025' },
+]
 
-export const customer: CustomerSnapshot = { name: 'John Doe', membership: 'Premium User', currency: 'USD', availableBalance: availableBalance(ledger), savingsBalance, apy: 4.5, interestEarned, transactions, vaults, savingsVaults: vaults, account: { id: ACCOUNT_ID, type: 'checking', currency: 'USD', last4: '4821', openingBalance: OPENING_BALANCE, opened: 'April 2021' } }
+export const customer: CustomerSnapshot = {
+  name: 'John Doe',
+  membership: 'Premium User',
+  currency: 'USD',
+  availableBalance: availableBalance(ledger),
+  savingsBalance,
+  apy: 4.5,
+  interestEarned,
+  transactions,
+  vaults,
+  savingsVaults: vaults,
+  beneficiaries,
+  accountType: 'Personal checking',
+  accountStatus: 'Active',
+  accountOpened: 'April 2021',
+  customerSince: 'April 2021',
+  account: { id: ACCOUNT_ID, type: 'checking', currency: 'USD', last4: '4821', openingBalance: OPENING_BALANCE, opened: 'April 2021' },
+}
