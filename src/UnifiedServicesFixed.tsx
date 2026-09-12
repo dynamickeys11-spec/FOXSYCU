@@ -1,7 +1,7 @@
 import { BankingShell } from './BankingShell'
 import { SecurityCenter, PrivateBanking } from './SecurityPremiumFixed'
 import { SettingsPage } from './CoreBankingServices'
-import { TransferCenterV2 } from './TransferCenterV2'
+import { TransferCenterV3 } from './TransferCenterV3'
 import { SavingsCenter, CardsCenter, BeneficiariesCenter, StatementsCenter, CommunicationCenterV2 } from './FeatureBanking'
 import './unified-services.css'
 
@@ -19,4 +19,4 @@ export const UnifiedSavings = SavingsCenter
 export const UnifiedCards = CardsCenter
 export const UnifiedStatements = StatementsCenter
 export const UnifiedSettings = withShell(SettingsPage)
-export const UnifiedTransfers = TransferCenterV2
+export const UnifiedTransfers = TransferCenterV3
