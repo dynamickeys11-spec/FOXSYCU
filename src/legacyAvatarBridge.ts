@@ -1,6 +1,3 @@
-import { installLegacyFunctionalBridge } from './legacyFunctionalBridge'
-import { installLegacyYellowBridge } from './legacyYellowBridge'
-
 function money(value: number) {
   return `$${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
@@ -52,6 +49,4 @@ export function applyLegacyAvatarBridge(avatarUrl?: string | null) {
     }
   })
   applyLegacyActivityBridge()
-  installLegacyFunctionalBridge()
-  installLegacyYellowBridge()
 }
