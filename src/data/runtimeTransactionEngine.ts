@@ -3,6 +3,7 @@ import { availableBalance, makeEntry, roundMoney, settledBalance, type AccountLe
 
 const STORAGE_KEY = 'foxsycu.demo.ledger.runtime.v1'
 export interface TransferRequest { amount: number; beneficiary: string; memo?: string }
+export interface DepositRequest { amount: number; source?: string; memo?: string }
 export interface WithdrawalRequest { amount: number; memo?: string }
 export interface AdminCreditRequest { amount: number; reason: string; adminId: string }
 export interface EngineResult { ledger: AccountLedger; transaction: Transaction }
@@ -32,6 +33,12 @@ export function createRuntimeTransactionEngine(seed: AccountLedger) {
     getLedger: () => state,
     getSettledBalance: () => settledBalance(state),
     getAvailableBalance: () => availableBalance(state),
+    deposit: ({ amount, source, memo }: DepositRequest): EngineResult => {
+      validate(amount)
+      const now = stamp()
+      const origin = source?.trim() || 'FOXSYCU simulated deposit source'
+      return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'credit', kind: 'Deposit', category: 'Simulated deposit', description: 'USD deposit', counterparty: origin, memo: memo?.trim() || undefined, ...parts(now), amount, currency: 'USD', status: 'Completed', reference: id('DEP'), createdAt: now }))
+    },
     send: ({ amount, beneficiary, memo }: TransferRequest): EngineResult => {
       validate(amount); if (!beneficiary.trim()) throw new Error('Select a beneficiary before sending money.'); if (amount > availableBalance(state)) throw new Error('Insufficient available balance.')
       const now = stamp(); return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'debit', kind: 'Transfer', category: 'Beneficiary transfer', description: `Transfer to ${beneficiary}`, counterparty: beneficiary, memo: memo?.trim() || undefined, ...parts(now), amount: -amount, currency: 'USD', status: 'Completed', reference: id('TRF'), createdAt: now }))
