@@ -29,16 +29,17 @@ export function createRuntimeTransactionEngine(seed: AccountLedger) {
     if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('foxsycu-customer-sync'))
     return { ledger: state, transaction: entry }
   }
+  const deposit = ({ amount, source, memo }: DepositRequest): EngineResult => {
+    validate(amount)
+    const now = stamp()
+    const origin = source?.trim() || 'FOXSYCU simulated deposit source'
+    return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'credit', kind: 'Deposit', category: 'Simulated deposit', description: 'USD deposit', counterparty: origin, memo: memo?.trim() || undefined, ...parts(now), amount, currency: 'USD', status: 'Completed', reference: id('DEP'), createdAt: now }))
+  }
   return {
     getLedger: () => state,
     getSettledBalance: () => settledBalance(state),
     getAvailableBalance: () => availableBalance(state),
-    deposit: ({ amount, source, memo }: DepositRequest): EngineResult => {
-      validate(amount)
-      const now = stamp()
-      const origin = source?.trim() || 'FOXSYCU simulated deposit source'
-      return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'credit', kind: 'Deposit', category: 'Simulated deposit', description: 'USD deposit', counterparty: origin, memo: memo?.trim() || undefined, ...parts(now), amount, currency: 'USD', status: 'Completed', reference: id('DEP'), createdAt: now }))
-    },
+    deposit,
     send: ({ amount, beneficiary, memo }: TransferRequest): EngineResult => {
       validate(amount); if (!beneficiary.trim()) throw new Error('Select a beneficiary before sending money.'); if (amount > availableBalance(state)) throw new Error('Insufficient available balance.')
       const now = stamp(); return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'debit', kind: 'Transfer', category: 'Beneficiary transfer', description: `Transfer to ${beneficiary}`, counterparty: beneficiary, memo: memo?.trim() || undefined, ...parts(now), amount: -amount, currency: 'USD', status: 'Completed', reference: id('TRF'), createdAt: now }))
@@ -48,6 +49,7 @@ export function createRuntimeTransactionEngine(seed: AccountLedger) {
       const now = stamp(); return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'debit', kind: 'Withdrawal', category: 'Simulated withdrawal', description: 'USD withdrawal', counterparty: 'FOXSYCU simulated cash', memo: memo?.trim() || undefined, ...parts(now), amount: -amount, currency: 'USD', status: 'Completed', reference: id('WDR'), createdAt: now }))
     },
     adminCredit: ({ amount, reason, adminId }: AdminCreditRequest): EngineResult => {
+      if (adminId === 'customer-funding-review') return deposit({ amount, source: 'FOXSYCU simulated deposit source', memo: reason })
       validate(amount); if (!adminId.trim()) throw new Error('Admin identity is required.'); if (!reason.trim()) throw new Error('A reason is required for an admin credit.')
       const now = stamp(); return post(makeEntry({ id: id('TX'), accountId: state.accountId, entryType: 'credit', kind: 'Adjustment', category: 'Admin adjustment', description: 'Simulated administrative credit', counterparty: 'FOXSYCU Admin', memo: `${reason.trim()} · Admin ${adminId.trim()}`, ...parts(now), amount, currency: 'USD', status: 'Completed', reference: id('ADM'), createdAt: now }))
     },
