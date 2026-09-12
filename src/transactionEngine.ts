@@ -15,6 +15,7 @@ const merchants = [
 ] as const
 const beneficiaries = [{ name: 'Alex Smith', accountLast4: '1920' }, { name: 'Maria Johnson', accountLast4: '4472' }, { name: 'Northstar Holdings', accountLast4: '8104' }]
 const slug = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+const ledgerImpact = (t: Transaction) => t.amount - (t.fee || 0)
 
 function typeFor(t: Transaction): TransactionType {
   if (t.type) return t.type
@@ -40,7 +41,6 @@ function enrichSingle(t: Transaction, index: number): Transaction {
   const date = t.effectiveDate || t.date, time = t.time || '10:42 AM'
   let description = t.description, merchant: string | undefined, merchantCategory: string | undefined
   let memo = t.memo, fee = t.fee ?? 0
-
   if (type === 'CARD_PURCHASE') { const [m, c] = merchants[index % merchants.length]; merchant = t.merchant || m; merchantCategory = t.merchantCategory || c; description = merchant }
   if (type === 'ACH_CREDIT' && !t.description.toLowerCase().includes('treasury')) { description = t.description.toLowerCase().includes('income') ? 'ACH Credit — Payroll / Business Income' : 'ACH Credit — Business Operating Deposit'; memo ||= 'Operating income' }
   if (type === 'TRANSFER' || type === 'INTERNAL_TRANSFER') { description = debit ? `Transfer to ${party.name}` : `Transfer from ${party.name}`; memo ||= debit ? 'General transfer' : 'Incoming transfer' }
@@ -48,7 +48,6 @@ function enrichSingle(t: Transaction, index: number): Transaction {
   if (type === 'WIRE_OUT') description = 'Domestic Wire Transfer'
   if (type === 'INTEREST_CREDIT') description = 'Savings Interest Credit'
   if (type === 'FEE') description = 'Monthly account service fee'
-
   return {
     ...t, reference: t.reference || makeReference(type, date, index), type, direction,
     sourceAccount: debit ? CHECKING : { name: 'External Funding Account', accountLast4: '••••' }, destinationAccount: debit ? party : CHECKING,
@@ -74,7 +73,15 @@ function expandMonthlyActivity(seed: Transaction, seedIndex: number): Transactio
   return [enrichSingle(seed, seedIndex)]
 }
 
-const ledgerImpact = (t: Transaction) => t.amount - (t.fee || 0)
+function withRunningBalances(transactions: Transaction[], openingBalance: number): Transaction[] {
+  let posted = openingBalance
+  return [...transactions].sort((a, b) => new Date(`${a.date} ${a.time}`).getTime() - new Date(`${b.date} ${b.time}`).getTime()).map(t => {
+    if (t.status === 'Completed') posted += ledgerImpact(t)
+    const pendingDebit = t.status === 'Pending' && t.amount < 0 ? Math.abs(t.amount) + (t.fee || 0) : 0
+    const pendingCredit = t.status === 'Pending' && t.amount > 0 ? t.amount - (t.fee || 0) : 0
+    return { ...t, postedBalanceAfter: Number(posted.toFixed(2)), availableBalanceAfter: Number((posted - pendingDebit + pendingCredit).toFixed(2)) }
+  }).sort((a, b) => new Date(`${b.date} ${b.time}`).getTime() - new Date(`${a.date} ${a.time}`).getTime())
+}
 
 /** Builds the synthetic 2021–2026 banking universe. Realistic fields are modeled without claiming external network execution. */
 export function buildTransactionUniverse(seed: Transaction[]): Transaction[] {
@@ -94,7 +101,7 @@ export function buildTransactionUniverse(seed: Transaction[]): Transaction[] {
   const posted = 125000 + all.filter(t => t.status === 'Completed').reduce((sum, t) => sum + ledgerImpact(t), 0)
   const adjustment = Number((5000000 - posted).toFixed(2))
   if (Math.abs(adjustment) > 0.01) all.push(enrichSingle({ id: 'TX-RECON-2026', kind: adjustment >= 0 ? 'Deposit' : 'Transfer', type: adjustment >= 0 ? 'INTERNAL_TRANSFER' : 'TRANSFER', status: 'Completed', amount: adjustment, currency: 'USD', description: 'Portfolio liquidity transfer', date: 'Sep 10, 2026', time: '03:17 PM', reference: 'FX-260910-RECON', counterparty: 'John Doe — linked investment account', category: 'Treasury / liquidity', memo: 'Portfolio reconciliation entry', fee: 0 }, 9999))
-  return all.sort((a, b) => new Date(`${b.date} ${b.time}`).getTime() - new Date(`${a.date} ${a.time}`).getTime())
+  return withRunningBalances(all, 125000)
 }
 
 export function calculateBalances(transactions: Transaction[], openingBalance = 125000) {
