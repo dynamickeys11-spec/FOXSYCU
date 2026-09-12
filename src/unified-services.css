@@ -1,0 +1,16 @@
+.bank-content > .core-page { min-height: auto; background: transparent; }
+.bank-content > .core-page .core-top { display: none; }
+.bank-content > .core-page .core-main { max-width: none; margin: 0; padding: 0; }
+.bank-content > .core-page .core-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 24px; }
+.bank-content > .core-page .core-heading > div > span { display: block; font-size: 11px; letter-spacing: .14em; font-weight: 800; color: #667085; }
+.bank-content > .core-page .core-heading h1 { margin: 7px 0 6px; font-size: clamp(28px, 3vw, 38px); letter-spacing: -.03em; }
+.bank-content > .core-page .core-heading p { margin: 0; color: #667085; }
+.bank-content > .core-page .core-back { display: none; }
+
+@media (max-width: 760px) {
+  .bank-content > .core-page .core-heading { display: block; }
+  .bank-content > .core-page .core-heading h1 { font-size: 28px; }
+}
+
+.bank-content > .sp-header { margin-bottom: 24px; }
+.bank-content > .sp-header h1 { margin-top: 7px; }
