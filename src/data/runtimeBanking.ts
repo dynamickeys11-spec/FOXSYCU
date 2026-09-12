@@ -6,6 +6,7 @@ import { createRuntimeTransactionEngine } from './runtimeTransactionEngine'
 export const runtimeEngine = createRuntimeTransactionEngine(ledger)
 
 export function refreshCustomerSnapshot() {
+  runtimeEngine.hydrateFromSnapshot()
   const current = runtimeEngine.getLedger()
   customer.availableBalance = runtimeEngine.getAvailableBalance()
   customer.transactions = current.entries.map(entry => ({ ...entry, amount: amountForEntry(entry) }))
