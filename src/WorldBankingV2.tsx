@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
+import { useMemo, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Activity, ArrowDownLeft, ArrowUpRight, Bell, ChevronRight, CreditCard, FileText, Home, Menu, MoveRight, PiggyBank, Search, Settings, ShieldCheck, Users, Wallet, X } from 'lucide-react'
 import { customer as seed } from './data/mockData'
@@ -6,28 +6,177 @@ import type { Transaction } from './types'
 import { addTransaction } from './ledgerStore'
 import './world-v2.css'
 
-const fmt=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
-const checking='•••• 4821', savings='•••• 7814'
-const nav=[['Overview','/',Home],['Accounts','/accounts',Wallet],['Transfers & Payments','/transfers',MoveRight],['Beneficiaries','/beneficiaries',Users],['Transactions','/transactions',Activity],['Savings','/savings',PiggyBank],['Cards','/cards',CreditCard],['Statements & Documents','/statements',FileText],['Security Center','/settings',ShieldCheck],['Settings','/settings',Settings]] as const
-const ledgerKey='foxsycu.transactions'
-const subscribe=(fn:()=>void)=>{window.addEventListener('foxsycu-ledger',fn);return()=>window.removeEventListener('foxsycu-ledger',fn)}
-const snapshot=()=>{try{return localStorage.getItem(ledgerKey)||JSON.stringify(seed.transactions)}catch{return JSON.stringify(seed.transactions)}}
-function useLedger(){const raw=useSyncExternalStore(subscribe,snapshot,snapshot);const tx=useMemo<Transaction[]>(()=>JSON.parse(raw),[raw]);const posted=tx.filter(t=>t.status==='Completed').reduce((s,t)=>s+t.amount,125000);const pending=tx.filter(t=>t.status==='Pending').reduce((s,t)=>s+Math.abs(t.amount),0);return {tx,posted,pending}}
-function commit(t:Transaction){addTransaction(t);window.dispatchEvent(new Event('foxsycu-ledger'))}
-function Shell({children}:{children:React.ReactNode}){const[menu,setMenu]=useState(false);const[q,setQ]=useState('');const{tx}=useLedger();const results=q?tx.filter(t=>`${t.description} ${t.counterparty||''} ${t.reference}`.toLowerCase().includes(q.toLowerCase())).slice(0,6):[];return <div className="bank-app"><aside className={`bank-sidebar ${menu?'show':''}`}><div className="bank-logo"><div className="logo-mark">F</div><div><b>FOXSYCU</b><small>DIGITAL BANKING SYSTEM</small></div><button className="side-close" onClick={()=>setMenu(false)}><X size={18}/></button></div><div className="customer-chip"><span>JD</span><div><b>John Doe</b><small>Premium · USD</small></div></div><div className="nav-label">BANKING</div><nav>{nav.map(([label,path,I])=><NavLink key={label} to={path} end={path==='/'&&true} onClick={()=>setMenu(false)} className={({isActive})=>`bank-link ${isActive?'active':''}`}><I size={17}/><span>{label}</span></NavLink>)}</nav><div className="security-foot"><ShieldCheck size={16}/><div><b>Protected</b><small>Security center</small></div></div></aside><div className="bank-body"><header className="bank-header"><button className="menu-button" onClick={()=>setMenu(true)}><Menu size={20}/></button><div className="header-title">PERSONAL BANKING</div><div className="header-actions"><div className="global-search"><Search size={16}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search transactions, accounts…"/>{q&&<button onClick={()=>setQ('')}><X size={14}/></button>}{q&&<div className="search-results">{results.length?results.map(t=><NavLink key={t.id} to="/transactions" onClick={()=>setQ('')}><b>{t.description}</b><strong>{fmt(t.amount)}</strong><small>{t.date} · {t.reference}</small></NavLink>):<span>No matching activity</span>}</div>:null}</div><button className="icon-button"><Bell size={18}/><i/></button><NavLink to="/settings" className="profile"><span>JD</span><div><b>John Doe</b><small>Premium User</small></div></NavLink></div></header><main className="bank-content">{children}</main></div><nav className="mobile-nav">{[['Home','/',Home],['Savings','/savings',PiggyBank],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Profile','/settings',Settings]].map(([l,p,I])=><NavLink key={l as string} to={p as string} end={p==='/' }><I size={18}/><span>{l as string}</span></NavLink>)}</nav></div>}
-function Header({eyebrow,title,description,action}:{eyebrow:string;title:string;description:string;action?:React.ReactNode}){return <div className="page-header"><div><span>{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{action}</div>}
-function Status({status}:{status:Transaction['status']}){return <span className={`status ${status.toLowerCase()}`}>{status}</span>}
-function TransactionRow({t,onClick}:{t:Transaction;onClick?:()=>void}){return <button className="transaction-row" onClick={onClick}><span className={`transaction-icon ${t.amount>=0?'credit':'debit'}`}>{t.amount>=0?<ArrowDownLeft size={15}/>:<ArrowUpRight size={15}/>}</span><span className="transaction-copy"><b>{t.description}</b><small>{t.counterparty||t.category||t.kind} · {t.date} · {t.time}</small></span><span className="transaction-value"><Status status={t.status}/><strong className={t.amount>=0?'positive':''}>{t.amount>=0?'+':''}{fmt(t.amount)}</strong></span><ChevronRight size={15}/></button>}
-function Dashboard(){const{tx,posted,pending}=useLedger();return <><Header eyebrow="OVERVIEW" title="Good morning, John." description="Your complete USD banking relationship at a glance." action={<NavLink className="primary-btn" to="/transfers"><MoveRight size={16}/>Move money</NavLink>}/><section className="balance-hero"><div><span>AVAILABLE CHECKING BALANCE</span><strong>{fmt(posted)}</strong><p>Private Checking {checking} · USD</p></div><div className="relationship-total"><span>TOTAL RELATIONSHIP</span><b>{fmt(posted+seed.savingsBalance)}</b><small>Checking + Savings</small></div></section><section className="action-strip"><NavLink to="/transfers?mode=transfer"><MoveRight/><b>Transfer</b><small>Between accounts or externally</small></NavLink><NavLink to="/transfers?mode=wire"><ArrowUpRight/><b>Wire money</b><small>Domestic or international</small></NavLink><NavLink to="/transfers?mode=zelle"><Users/><b>Zelle</b><small>Send or request</small></NavLink><NavLink to="/transfers?mode=deposit"><ArrowDownLeft/><b>Deposit</b><small>Add funds</small></NavLink></section><div className="two-column"><section className="bank-card"><CardTitle title="Accounts" note="Balances across your relationship" link="/accounts"/><AccountLine icon={<Wallet/>} name="Private Checking" detail={`USD · ${checking}`} value={posted}/><AccountLine icon={<PiggyBank/>} name="Savings" detail={`3 vaults · ${seed.apy.toFixed(2)}% APY · ${savings}`} value={seed.savingsBalance}/></section><section className="bank-card"><CardTitle title="Balance position" note="Current account status"/><Metric label="Available" value={posted}/><Metric label="Pending" value={pending}/><Metric label="Relationship" value={posted+seed.savingsBalance}/></section></div><section className="bank-card"><CardTitle title="Recent activity" note="Your latest account activity" link="/transactions"/>{tx.slice(0,8).map(t=><TransactionRow key={t.id} t={t}/>)}</section></>}
-function CardTitle({title,note,link}:{title:string;note:string;link?:string}){return <div className="card-title"><div><h2>{title}</h2><p>{note}</p></div>{link&&<NavLink to={link}>View all <ChevronRight size={14}/></NavLink>}</div>}
-function AccountLine({icon,name,detail,value}:{icon:React.ReactNode;name:string;detail:string;value:number}){return <div className="account-line"><span className="account-icon">{icon}</span><span><b>{name}</b><small>{detail}</small></span><strong>{fmt(value)}</strong></div>}
-function Metric({label,value}:{label:string;value:number}){return <div className="metric"><span>{label}</span><b>{fmt(value)}</b></div>}
-function Accounts(){const{posted,pending,tx}=useLedger();return <><Header eyebrow="ACCOUNTS" title="Private Checking" description="Primary USD account · active since March 18, 2021" action={<NavLink className="primary-btn" to="/transfers"><MoveRight size={16}/>Transfer</NavLink>}/><section className="account-banner"><span>AVAILABLE BALANCE</span><strong>{fmt(posted)}</strong><p>Private Checking {checking}</p><div className="account-metrics"><Metric label="Current balance" value={posted}/><Metric label="Pending" value={pending}/><div className="metric"><span>Status</span><b className="positive">Active</b></div></div></section><div className="two-column"><section className="bank-card"><CardTitle title="Account details" note="Account identifiers and status"/>{[['Account type','Private checking'],['Currency','United States Dollar (USD)'],['Account number',checking],['Opened',seed.accountOpened],['Customer since',seed.customerSince],['Status','Active']].map(([a,b])=><div className="detail-line" key={a}><span>{a}</span><b>{b}</b></div>)}</section><section className="bank-card"><CardTitle title="Account services" note="Manage your account"/>{[['Statements & Documents','/statements'],['Beneficiaries','/beneficiaries'],['Cards','/cards'],['Security Center','/settings']].map(([a,p])=><NavLink className="service-line" to={p} key={a}><span>{a}</span><ChevronRight size={15}/></NavLink>)}</section></div><section className="bank-card"><CardTitle title="Account activity" note="Posted and pending transactions" link="/transactions"/>{tx.slice(0,20).map(t=><TransactionRow key={t.id} t={t}/>)}</section></>}
-function Transfers(){const{posted}=useLedger();const[mode,setMode]=useState(new URLSearchParams(useLocation().search).get('mode')||'transfer');const[to,setTo]=useState(seed.beneficiaries[0]?.name||'Alex Smith');const[amount,setAmount]=useState('');const[memo,setMemo]=useState('');const[method,setMethod]=useState('ACH transfer');const[review,setReview]=useState(false);const[done,setDone]=useState<Transaction|null>(null);const nav=useNavigate();const value=Number(amount)||0;const fee=method==='Domestic wire'?15:0;const total=value+fee;function confirm(){if(!value||total>posted)return;const now=new Date();const ref=`FX-${now.toISOString().slice(0,10).replaceAll('-','')}-${Math.random().toString(36).slice(2,8).toUpperCase()}`;const t:Transaction={id:ref,kind:'Transfer',description:mode==='zelle'?`Zelle payment to ${to}`:method==='Domestic wire'?`Domestic wire to ${to}`:`Transfer to ${to}`,date:now.toISOString().slice(0,10),time:now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),amount:-total,currency:'USD',status:'Completed',reference:ref,category:mode==='zelle'?'Zelle':method,counterparty:to};commit(t);setDone(t);setReview(false)}if(done)return <><Header eyebrow="TRANSFER CONFIRMED" title="Transfer completed" description="The transaction has been posted to your account."/><section className="receipt"><div className="success-mark">✓</div><span>COMPLETED</span><strong>{fmt(Math.abs(done.amount))}</strong><p>{done.description}</p><div className="receipt-grid"><div><span>Reference</span><b>{done.reference}</b></div><div><span>Account</span><b>Private Checking {checking}</b></div><div><span>Recipient</span><b>{to}</b></div><div><span>New available balance</span><b>{fmt(posted+done.amount)}</b></div></div><div className="receipt-actions"><button className="secondary-btn" onClick={()=>setDone(null)}>Make another</button><button className="primary-btn" onClick={()=>nav('/transactions')}>View activity</button></div></section></>;return <><Header eyebrow="MOVE MONEY" title="Transfers & payments" description="Choose a payment rail and review every detail before authorization."/><div className="rail-tabs">{[['transfer','Transfer'],['wire','Wire'],['zelle','Zelle'],['deposit','Deposit']].map(([id,label])=><button key={id} className={mode===id?'active':''} onClick={()=>setMode(id)}>{label}</button>)}</div><div className="transfer-grid"><section className="bank-card transfer-form"><CardTitle title={mode==='wire'?'Domestic wire':mode==='zelle'?'Send with Zelle':mode==='deposit'?'Deposit funds':'Transfer money'} note="Secure transaction authorization"/>{mode==='deposit'?<><Field label="Source"><select><option>External linked account</option></select></Field><Field label="Amount"><input value={amount} onChange={e=>setAmount(e.target.value.replace(/[^0-9.]/g,''))} placeholder="0.00"/></Field></>:<><Field label="Recipient"><select value={to} onChange={e=>setTo(e.target.value)}>{seed.beneficiaries.map(b=><option key={b.id}>{b.name}</option>)}</select></Field>{mode!=='zelle'&&<Field label="Delivery method"><select value={method} onChange={e=>setMethod(e.target.value)}><option>ACH transfer</option><option>Domestic wire</option><option>Internal transfer</option></select></Field>}<Field label="Amount"><input value={amount} onChange={e=>setAmount(e.target.value.replace(/[^0-9.]/g,''))} placeholder="0.00"/></Field><Field label="Memo"><input value={memo} onChange={e=>setMemo(e.target.value)} placeholder="Optional payment note"/></Field></>}<div className="secure-note"><ShieldCheck size={16}/><span>Available balance {fmt(posted)} · Transaction protected</span></div><button className="primary-btn full" disabled={!value||total>posted} onClick={()=>setReview(true)}>Review & authorize</button></section><aside className="bank-card transfer-summary"><span>TRANSACTION SUMMARY</span><div><small>From</small><b>Private Checking {checking}</b></div><div><small>Recipient</small><b>{to}</b></div><div><small>Amount</small><b>{fmt(value)}</b></div><div><small>Fee</small><b>{fmt(fee)}</b></div><div className="summary-total"><span>Total debit</span><strong>{fmt(total)}</strong></div></aside></div>{review&&<div className="modal"><section className="confirm"><button className="close" onClick={()=>setReview(false)}><X size={18}/></button><span>REVIEW & AUTHORIZE</span><h2>Confirm transaction</h2><strong>{fmt(total)}</strong><p>{mode==='zelle'?'Zelle payment':method} · {to}</p><div className="confirm-lines"><div><span>From</span><b>Private Checking {checking}</b></div><div><span>Recipient</span><b>{to}</b></div><div><span>Fee</span><b>{fmt(fee)}</b></div></div><div className="modal-actions"><button className="secondary-btn" onClick={()=>setReview(false)}>Cancel</button><button className="primary-btn" onClick={confirm}>Confirm transfer</button></div></section></div>}</>}
-function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="field">{label}{children}</label>}
-function Transactions(){const{tx}=useLedger();const[query,setQuery]=useState('');const[sel,setSel]=useState<Transaction|null>(null);const list=tx.filter(t=>`${t.description} ${t.counterparty||''} ${t.reference} ${t.category||''}`.toLowerCase().includes(query.toLowerCase()));return <><Header eyebrow="TRANSACTIONS" title="Activity" description="Search and review every posted and pending transaction."/><div className="transaction-toolbar"><div><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by name, reference or type"/></div><button>All activity</button></div><section className="bank-card activity-list">{list.map(t=><TransactionRow key={t.id} t={t} onClick={()=>setSel(t)}/>)}</section>{sel&&<div className="drawer-back" onClick={()=>setSel(null)}><aside className="transaction-drawer" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSel(null)}><X size={18}/></button><span>TRANSACTION DETAILS</span><h2>{sel.description}</h2><strong className={sel.amount>=0?'positive':''}>{sel.amount>=0?'+':''}{fmt(sel.amount)}</strong><Status status={sel.status}/>{[['Date',`${sel.date} · ${sel.time}`],['Type',sel.kind],['Reference',sel.reference],['Counterparty',sel.counterparty||'—'],['Category',sel.category||'—'],['Account',`Private Checking ${checking}`]].map(([a,b])=><div className="drawer-line" key={a}><span>{a}</span><b>{b}</b></div>)}<button className="secondary-btn full">View receipt</button></aside></div>}</>}
-function Simple({title,eyebrow,description,children}:{title:string;eyebrow:string;description:string;children?:React.ReactNode}){return <><Header eyebrow={eyebrow} title={title} description={description}/>{children||<section className="bank-card empty"><ShieldCheck size={28}/><h2>Service center</h2><p>This banking area is ready for its operational workflow.</p></section>}</>}
-function Savings(){return <><Header eyebrow="SAVE" title="Savings" description="Three USD savings vaults earning interest."/><div className="stat-grid"><Metric label="Savings balance" value={seed.savingsBalance}/><Metric label="APY" value={seed.apy}/><Metric label="Interest earned" value={seed.interestEarned}/></div><section className="vault-grid">{seed.savingsVaults.map(v=><article className="bank-card vault" key={v.id}><span>{v.name.toUpperCase()}</span><h2>{fmt(v.balance)}</h2><p>Target {fmt(v.target)}</p><div className="progress"><i style={{width:`${Math.min(100,(v.balance/v.target)*100)}%`}}/></div><small>{v.interestEarned?fmt(v.interestEarned):'$0.00'} interest earned</small></article>)}</section></>}
-function Cards(){return <><Header eyebrow="CARDS" title="Cards" description="Manage your FOXSYCU payment cards and controls."/><section className="card-layout"><div className="debit-card"><span>FOXSYCU</span><small>PRIVATE DEBIT</small><strong>•••• 4821</strong><b>JOHN DOE</b></div><section className="bank-card"><CardTitle title="Card controls" note="Control how your card can be used"/>{['Lock / unlock card','Online purchases','International transactions','ATM withdrawals','Contactless payments'].map(x=><div className="control-line" key={x}><span>{x}</span><b>On</b></div>)}</section></section></>}
-function Statements(){return <><Header eyebrow="DOCUMENTS" title="Statements & documents" description="Statements generated from your account activity."/><section className="bank-card"><CardTitle title="2026 statements" note="Private Checking · USD"/>{['August 2026','July 2026','June 2026','May 2026','April 2026','March 2026'].map(m=><div className="statement-line" key={m}><FileText size={17}/><div><b>{m} statement</b><small>Private Checking {checking} · PDF</small></div><button>View</button></div>)}</section></>}
-export default function WorldBankingV2(){const path=useLocation().pathname;let page:React.ReactNode=<Dashboard/>;if(path==='/accounts')page=<Accounts/>;else if(path==='/transfers')page=<Transfers/>;else if(path==='/transactions')page=<Transactions/>;else if(path==='/savings')page=<Savings/>;else if(path==='/cards')page=<Cards/>;else if(path==='/statements')page=<Statements/>;else if(path==='/beneficiaries')page=<Simple eyebrow="MONEY" title="Beneficiaries" description="Manage verified recipients for transfers and payments."/>;else if(path==='/settings')page=<Simple eyebrow="SECURITY" title="Security Center" description="Protect your account, sessions and transaction authorization."/>;return <Shell>{page}</Shell>}
+const ACCOUNT = '•••• 4821'
+const SAVINGS = '•••• 7814'
+const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+const nav = [
+  ['Overview', '/', Home],
+  ['Accounts', '/accounts', Wallet],
+  ['Transfers & Payments', '/transfers', MoveRight],
+  ['Beneficiaries', '/beneficiaries', Users],
+  ['Transactions', '/transactions', Activity],
+  ['Savings', '/savings', PiggyBank],
+  ['Cards', '/cards', CreditCard],
+  ['Statements & Documents', '/statements', FileText],
+  ['Security Center', '/settings', ShieldCheck],
+  ['Settings', '/settings', Settings],
+] as const
+
+function getTransactions(): Transaction[] {
+  try {
+    const raw = localStorage.getItem('foxsycu.transactions')
+    return raw ? JSON.parse(raw) : seed.transactions
+  } catch {
+    return seed.transactions
+  }
+}
+
+function Header({ title, eyebrow, description, action }: { title: string; eyebrow: string; description: string; action?: React.ReactNode }) {
+  return (
+    <div className="page-header">
+      <div>
+        <span>{eyebrow}</span>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+      {action}
+    </div>
+  )
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const transactions = getTransactions()
+  const matches = useMemo(() => transactions.filter(t => `${t.description} ${t.counterparty ?? ''} ${t.reference}`.toLowerCase().includes(query.toLowerCase())).slice(0, 5), [transactions, query])
+
+  return (
+    <div className="bank-app">
+      <aside className={`bank-sidebar ${open ? 'show' : ''}`}>
+        <div className="bank-logo">
+          <div className="logo-mark">F</div>
+          <div><b>FOXSYCU</b><small>DIGITAL BANKING SYSTEM</small></div>
+          <button className="side-close" onClick={() => setOpen(false)} aria-label="Close menu"><X size={18} /></button>
+        </div>
+        <div className="customer-chip"><span>JD</span><div><b>John Doe</b><small>Premium · USD</small></div></div>
+        <div className="nav-label">BANKING</div>
+        <nav>
+          {nav.map(([label, path, Icon]) => (
+            <NavLink key={label} to={path} end={path === '/'} onClick={() => setOpen(false)} className={({ isActive }) => `bank-link ${isActive ? 'active' : ''}`}>
+              <Icon size={17} /><span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+        <div className="security-foot"><ShieldCheck size={16} /><div><b>Protected</b><small>Security center</small></div></div>
+      </aside>
+
+      <div className="bank-body">
+        <header className="bank-header">
+          <button className="menu-button" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={20} /></button>
+          <div className="header-title">PERSONAL BANKING</div>
+          <div className="header-actions">
+            <div className="global-search">
+              <Search size={16} />
+              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search activity" />
+              {query && <button onClick={() => setQuery('')} aria-label="Clear search"><X size={14} /></button>}
+              {query && <div className="search-results">{matches.length ? matches.map(t => <NavLink key={t.id} to="/transactions" onClick={() => setQuery('')}><b>{t.description}</b><strong>{money(t.amount)}</strong><small>{t.date} · {t.reference}</small></NavLink>) : <span>No matching activity</span>}</div>}
+            </div>
+            <button className="icon-button" aria-label="Notifications"><Bell size={18} /><i /></button>
+            <NavLink to="/settings" className="profile"><span>JD</span><div><b>John Doe</b><small>Premium User</small></div></NavLink>
+          </div>
+        </header>
+        <main className="bank-content">{children}</main>
+      </div>
+
+      <nav className="mobile-nav">
+        {([['Home', '/', Home], ['Savings', '/savings', PiggyBank], ['Activity', '/transactions', Activity], ['Move', '/transfers', MoveRight], ['Profile', '/settings', Settings]] as const).map(([label, path, Icon]) => (
+          <NavLink key={label} to={path} end={path === '/'}><Icon size={18} /><span>{label}</span></NavLink>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
+function Card({ title, note, children, link }: { title: string; note: string; children: React.ReactNode; link?: string }) {
+  return <section className="bank-card"><div className="card-title"><div><h2>{title}</h2><p>{note}</p></div>{link && <NavLink to={link}>View all <ChevronRight size={14} /></NavLink>}</div>{children}</section>
+}
+
+function TransactionRow({ t, onClick }: { t: Transaction; onClick?: () => void }) {
+  return <button className="transaction-row" onClick={onClick}><span className={`transaction-icon ${t.amount >= 0 ? 'credit' : 'debit'}`}>{t.amount >= 0 ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}</span><span className="transaction-copy"><b>{t.description}</b><small>{t.counterparty || t.category || t.kind} · {t.date}</small></span><span className="transaction-value"><strong className={t.amount >= 0 ? 'positive' : ''}>{t.amount >= 0 ? '+' : ''}{money(t.amount)}</strong><small>{t.status}</small></span><ChevronRight size={15} /></button>
+}
+
+function Dashboard() {
+  const transactions = getTransactions()
+  const balance = transactions.filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.amount, 125000)
+  const pending = transactions.filter(t => t.status === 'Pending').reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const total = balance + seed.savingsBalance
+
+  return <>
+    <Header eyebrow="OVERVIEW" title="Good morning, John." description="Your USD banking relationship at a glance." action={<NavLink className="primary-btn" to="/transfers"><MoveRight size={16} />Move money</NavLink>} />
+    <section className="balance-hero"><div><span>AVAILABLE CHECKING BALANCE</span><strong>{money(balance)}</strong><p>Private Checking {ACCOUNT} · USD</p></div><div className="relationship-total"><span>TOTAL RELATIONSHIP</span><b>{money(total)}</b><small>Checking + Savings</small></div></section>
+    <section className="action-strip"><NavLink to="/transfers?mode=transfer"><MoveRight /><b>Transfer</b><small>Move money</small></NavLink><NavLink to="/transfers?mode=wire"><ArrowUpRight /><b>Wire</b><small>Send a wire</small></NavLink><NavLink to="/transfers?mode=zelle"><Users /><b>Zelle</b><small>Send money</small></NavLink><NavLink to="/transfers?mode=deposit"><ArrowDownLeft /><b>Deposit</b><small>Add funds</small></NavLink></section>
+    <div className="two-column"><Card title="Accounts" note="Balances across your relationship" link="/accounts"><div className="account-line"><span className="account-icon"><Wallet /></span><span><b>Private Checking</b><small>USD · {ACCOUNT}</small></span><strong>{money(balance)}</strong></div><div className="account-line"><span className="account-icon"><PiggyBank /></span><span><b>Savings</b><small>3 vaults · {seed.apy.toFixed(2)}% APY · {SAVINGS}</small></span><strong>{money(seed.savingsBalance)}</strong></div></Card><Card title="Balance position" note="Current account status"><div className="metric"><span>Available</span><b>{money(balance)}</b></div><div className="metric"><span>Pending</span><b>{money(pending)}</b></div><div className="metric"><span>Relationship</span><b>{money(total)}</b></div></Card></div>
+    <Card title="Recent activity" note="Latest account activity" link="/transactions">{transactions.slice(0, 7).map(t => <TransactionRow key={t.id} t={t} />)}</Card>
+  </>
+}
+
+function Accounts() {
+  const transactions = getTransactions()
+  const balance = transactions.filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.amount, 125000)
+  return <><Header eyebrow="ACCOUNTS" title="Private Checking" description="Primary USD account · active since March 18, 2021" action={<NavLink className="primary-btn" to="/transfers">Transfer</NavLink>} /><section className="account-banner"><span>AVAILABLE BALANCE</span><strong>{money(balance)}</strong><p>Private Checking {ACCOUNT}</p></section><Card title="Account details" note="Account identifiers and status"><div className="detail-line"><span>Account type</span><b>Private checking</b></div><div className="detail-line"><span>Currency</span><b>United States Dollar (USD)</b></div><div className="detail-line"><span>Account number</span><b>{ACCOUNT}</b></div><div className="detail-line"><span>Opened</span><b>{seed.accountOpened}</b></div><div className="detail-line"><span>Status</span><b className="positive">Active</b></div></Card><Card title="Account activity" note="Posted and pending transactions" link="/transactions">{transactions.slice(0, 15).map(t => <TransactionRow key={t.id} t={t} />)}</Card></>
+}
+
+function Transfers() {
+  const navigate = useNavigate()
+  const initial = new URLSearchParams(useLocation().search).get('mode') || 'transfer'
+  const [mode, setMode] = useState(initial)
+  const [amount, setAmount] = useState('')
+  const [recipient, setRecipient] = useState(seed.beneficiaries[0]?.name || 'Alex Smith')
+  const [review, setReview] = useState(false)
+  const [done, setDone] = useState<Transaction | null>(null)
+  const transactions = getTransactions()
+  const balance = transactions.filter(t => t.status === 'Completed').reduce((sum, t) => sum + t.amount, 125000)
+  const value = Number(amount) || 0
+  const fee = mode === 'wire' ? 15 : 0
+
+  const confirm = () => {
+    if (!value || value + fee > balance) return
+    const now = new Date()
+    const ref = `FX-${now.toISOString().slice(0, 10).replaceAll('-', '')}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+    const transaction: Transaction = { id: ref, kind: 'Transfer', description: mode === 'zelle' ? `Zelle payment to ${recipient}` : mode === 'wire' ? `Domestic wire to ${recipient}` : `Transfer to ${recipient}`, date: now.toISOString().slice(0, 10), time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }), amount: -(value + fee), currency: 'USD', status: 'Completed', reference: ref, category: mode === 'zelle' ? 'Zelle' : mode === 'wire' ? 'Domestic wire' : 'ACH transfer', counterparty: recipient }
+    addTransaction(transaction)
+    setDone(transaction)
+    setReview(false)
+  }
+
+  if (done) return <><Header eyebrow="TRANSFER CONFIRMED" title="Transfer completed" description="The transaction has been posted to your account." /><section className="receipt"><div className="success-mark">✓</div><span>COMPLETED</span><strong>{money(Math.abs(done.amount))}</strong><p>{done.description}</p><div className="receipt-grid"><div><span>Reference</span><b>{done.reference}</b></div><div><span>Recipient</span><b>{recipient}</b></div><div><span>New available balance</span><b>{money(balance + done.amount)}</b></div></div><div className="receipt-actions"><button className="secondary-btn" onClick={() => setDone(null)}>Make another</button><button className="primary-btn" onClick={() => navigate('/transactions')}>View activity</button></div></section></>
+
+  return <><Header eyebrow="MOVE MONEY" title="Transfers & payments" description="Choose a payment rail and review every detail before authorization." /><div className="rail-tabs">{[['transfer', 'Transfer'], ['wire', 'Wire'], ['zelle', 'Zelle'], ['deposit', 'Deposit']].map(([id, label]) => <button key={id} className={mode === id ? 'active' : ''} onClick={() => setMode(id)}>{label}</button>)}</div><div className="transfer-grid"><Card title={mode === 'wire' ? 'Domestic wire' : mode === 'zelle' ? 'Send with Zelle' : mode === 'deposit' ? 'Deposit funds' : 'Transfer money'} note="Secure transaction authorization"><label className="field">Recipient<select value={recipient} onChange={e => setRecipient(e.target.value)}>{seed.beneficiaries.map(b => <option key={b.id}>{b.name}</option>)}</select></label><label className="field">Amount<input value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.00" inputMode="decimal" /></label><div className="secure-note"><ShieldCheck size={16} />Available balance {money(balance)}</div><button className="primary-btn full" disabled={!value || value + fee > balance} onClick={() => setReview(true)}>Review & authorize</button></Card><aside className="bank-card transfer-summary"><span>TRANSACTION SUMMARY</span><div><small>From</small><b>Private Checking {ACCOUNT}</b></div><div><small>Recipient</small><b>{recipient}</b></div><div><small>Amount</small><b>{money(value)}</b></div><div><small>Fee</small><b>{money(fee)}</b></div><div className="summary-total"><span>Total debit</span><strong>{money(value + fee)}</strong></div></aside></div>{review && <div className="modal"><section className="confirm"><button className="close" onClick={() => setReview(false)}><X size={18} /></button><span>REVIEW & AUTHORIZE</span><h2>Confirm transaction</h2><strong>{money(value + fee)}</strong><p>{mode === 'zelle' ? 'Zelle payment' : mode === 'wire' ? 'Domestic wire' : 'Transfer'} · {recipient}</p><div className="modal-actions"><button className="secondary-btn" onClick={() => setReview(false)}>Cancel</button><button className="primary-btn" onClick={confirm}>Confirm transfer</button></div></section></div>}</>
+}
+
+function Transactions() {
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState<Transaction | null>(null)
+  const transactions = getTransactions().filter(t => `${t.description} ${t.counterparty ?? ''} ${t.reference}`.toLowerCase().includes(query.toLowerCase()))
+  return <><Header eyebrow="TRANSACTIONS" title="Activity" description="Search and review your account activity." /><div className="transaction-toolbar"><div><Search size={16} /><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by name or reference" /></div></div><Card title="All activity" note={`${transactions.length} transactions`}>{transactions.map(t => <TransactionRow key={t.id} t={t} onClick={() => setSelected(t)} />)}</Card>{selected && <div className="drawer-back" onClick={() => setSelected(null)}><aside className="transaction-drawer" onClick={e => e.stopPropagation()}><button className="close" onClick={() => setSelected(null)}><X size={18} /></button><span>TRANSACTION DETAILS</span><h2>{selected.description}</h2><strong className={selected.amount >= 0 ? 'positive' : ''}>{selected.amount >= 0 ? '+' : ''}{money(selected.amount)}</strong><p>{selected.status}</p><div className="drawer-line"><span>Date</span><b>{selected.date} · {selected.time}</b></div><div className="drawer-line"><span>Reference</span><b>{selected.reference}</b></div><div className="drawer-line"><span>Counterparty</span><b>{selected.counterparty || '—'}</b></div></aside></div>}</>
+}
+
+function Savings() { return <><Header eyebrow="SAVE" title="Savings" description="Three USD savings vaults earning interest." /><div className="vault-grid">{seed.savingsVaults.map(v => <article className="bank-card vault" key={v.id}><span>{v.name.toUpperCase()}</span><h2>{money(v.balance)}</h2><p>Target {money(v.target)}</p><div className="progress"><i style={{ width: `${Math.min(100, (v.balance / v.target) * 100)}%` }} /></div><small>{money(v.interestEarned || 0)} interest earned</small></article>)}</div></> }
+function Cards() { return <><Header eyebrow="CARDS" title="Cards" description="Manage your FOXSYCU payment card." /><div className="card-layout"><div className="debit-card"><span>FOXSYCU</span><small>PRIVATE DEBIT</small><strong>•••• 4821</strong><b>JOHN DOE</b></div><Card title="Card controls" note="Current controls"><div className="control-line"><span>Card status</span><b>Active</b></div><div className="control-line"><span>Online purchases</span><b>On</b></div><div className="control-line"><span>International</span><b>On</b></div><div className="control-line"><span>ATM withdrawals</span><b>On</b></div></Card></div></> }
+function Statements() { return <><Header eyebrow="DOCUMENTS" title="Statements & documents" description="Monthly statements for your USD accounts." /><Card title="2026 statements" note={`Private Checking ${ACCOUNT}`} >{['August 2026', 'July 2026', 'June 2026', 'May 2026', 'April 2026', 'March 2026'].map(month => <div className="statement-line" key={month}><FileText size={17} /><div><b>{month} statement</b><small>Private Checking · PDF</small></div><button>View</button></div>)}</Card></> }
+function Simple({ title, eyebrow, description }: { title: string; eyebrow: string; description: string }) { return <><Header eyebrow={eyebrow} title={title} description={description} /><Card title={title} note="Account service"><div className="empty"><ShieldCheck size={28} /><h2>Protected service</h2><p>This area is ready for its operational workflow.</p></div></Card></> }
+
+export default function WorldBankingV2() {
+  const path = useLocation().pathname
+  let page: React.ReactNode = <Dashboard />
+  if (path === '/accounts') page = <Accounts />
+  else if (path === '/transfers') page = <Transfers />
+  else if (path === '/transactions') page = <Transactions />
+  else if (path === '/savings') page = <Savings />
+  else if (path === '/cards') page = <Cards />
+  else if (path === '/statements') page = <Statements />
+  else if (path === '/beneficiaries') page = <Simple eyebrow="MONEY" title="Beneficiaries" description="Manage verified recipients for transfers and payments." />
+  else if (path === '/settings') page = <Simple eyebrow="SECURITY" title="Security Center" description="Protect your account, sessions and transaction authorization." />
+  return <Shell>{page}</Shell>
+}
