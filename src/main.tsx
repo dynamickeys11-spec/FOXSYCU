@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, useLocation } from 'react-router-dom'
 import App from './WorldBankingV2'
+import { AuthPage } from './AuthPage'
 import {
   UnifiedCommunicationCenter,
   UnifiedPrivateBanking,
@@ -16,6 +17,7 @@ import './styles.css'
 
 function Root() {
   const location = useLocation()
+  if (location.pathname === '/login') return <AuthPage />
   if (location.pathname === '/security') return <UnifiedSecurityCenter />
   if (location.pathname === '/communication') return <UnifiedCommunicationCenter />
   if (location.pathname === '/private-banking') return <UnifiedPrivateBanking />
