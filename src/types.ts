@@ -69,5 +69,5 @@ export interface CustomerSnapshot {
   accountStatus: string
   accountOpened: string
   customerSince: string
-  account?: { id: string; type: 'checking'; currency: 'USD'; last4: string; openingBalance: number; opened: string }
+  account: { id: string; type: 'checking'; currency: 'USD'; last4: string; openingBalance: number; opened: string }
 }
