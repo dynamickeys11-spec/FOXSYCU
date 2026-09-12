@@ -3,35 +3,32 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
 import { AuthPage } from './AuthPage'
 import { MFAChallenge } from './MFAChallenge'
-import { UnifiedCommunicationCenter, UnifiedPrivateBanking, UnifiedBeneficiaries, UnifiedSavings, UnifiedStatements, UnifiedSettings } from './UnifiedServicesFixed'
+import { UnifiedCommunicationCenter, UnifiedPrivateBanking, UnifiedBeneficiaries, UnifiedStatements, UnifiedSettings } from './UnifiedServicesFixed'
 import { SecurityCenterV2 } from './SecurityCenterV2'
-import { FNCUOverview, FNCUAccounts, FNCUTransfers, FNCUTransactions, FNCUCards } from './MainFiveScreens'
+import { FNCUHome, FNCUSavings, FNCUMove, FNCUProfile, FNCUAccounts, FNCUTransfers, FNCUTransactions, FNCUCards } from './MainFiveScreens'
 import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import './styles.css'
 import './core-banking.css'
 import './security-v2.css'
 
-function ProtectedRoot() {
-  const location = useLocation(); const navigate = useNavigate(); const { session, loading } = useCustomerData()
-  const [aalReady,setAalReady]=useState(false); const [needsMfa,setNeedsMfa]=useState(false)
-  useEffect(()=>{let active=true; const check=async()=>{if(!session){setAalReady(false);setNeedsMfa(false);return}; const {data,error}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel(); if(!active)return; if(error||data.nextLevel!=='aal2'||data.currentLevel==='aal2'){setNeedsMfa(false);setAalReady(true);return}; const recoveryGrant=sessionStorage.getItem('foxsycu.mfa.recovery.grant'); if(recoveryGrant){const {data:grant}=await supabase.rpc('has_mfa_recovery_grant',{p_grant_token:recoveryGrant}); if(grant?.valid){setNeedsMfa(false);setAalReady(true);return}; sessionStorage.removeItem('foxsycu.mfa.recovery.grant')} setNeedsMfa(true);setAalReady(true)};void check();return()=>{active=false}},[session])
-  useEffect(()=>{if(!loading&&!session)navigate('/login',{replace:true})},[loading,session,navigate])
-  if(loading||!session||!aalReady)return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',fontFamily:'Inter,system-ui,sans-serif'}}>Loading FNCU…</main>
-  if(needsMfa)return <MFAChallenge onVerified={()=>setNeedsMfa(false)}/>
-  if(location.pathname==='/')return <FNCUOverview/>
-  if(location.pathname==='/accounts')return <FNCUAccounts/>
-  if(location.pathname==='/transfers')return <FNCUTransfers/>
-  if(location.pathname==='/transactions')return <FNCUTransactions/>
-  if(location.pathname==='/cards')return <FNCUCards/>
-  if(location.pathname==='/security')return <SecurityCenterV2/>
-  if(location.pathname==='/communication')return <UnifiedCommunicationCenter/>
-  if(location.pathname==='/private-banking')return <UnifiedPrivateBanking/>
-  if(location.pathname==='/beneficiaries')return <UnifiedBeneficiaries/>
-  if(location.pathname==='/savings')return <UnifiedSavings/>
-  if(location.pathname==='/statements')return <UnifiedStatements/>
-  if(location.pathname==='/settings')return <UnifiedSettings/>
-  return <FNCUOverview/>
-}
+function ProtectedRoot(){const location=useLocation();const navigate=useNavigate();const {session,loading}=useCustomerData();const [aalReady,setAalReady]=useState(false);const [needsMfa,setNeedsMfa]=useState(false)
+useEffect(()=>{let active=true;const check=async()=>{if(!session){setAalReady(false);setNeedsMfa(false);return};const {data,error}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();if(!active)return;if(error||data.nextLevel!=='aal2'||data.currentLevel==='aal2'){setNeedsMfa(false);setAalReady(true);return};const recoveryGrant=sessionStorage.getItem('foxsycu.mfa.recovery.grant');if(recoveryGrant){const {data:grant}=await supabase.rpc('has_mfa_recovery_grant',{p_grant_token:recoveryGrant});if(grant?.valid){setNeedsMfa(false);setAalReady(true);return};sessionStorage.removeItem('foxsycu.mfa.recovery.grant')}setNeedsMfa(true);setAalReady(true)};void check();return()=>{active=false}},[session])
+useEffect(()=>{if(!loading&&!session)navigate('/login',{replace:true})},[loading,session,navigate])
+if(loading||!session||!aalReady)return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',fontFamily:'Inter,system-ui,sans-serif'}}>Loading FNCU…</main>
+if(needsMfa)return <MFAChallenge onVerified={()=>setNeedsMfa(false)}/>
+if(location.pathname==='/')return <FNCUHome/>
+if(location.pathname==='/savings')return <FNCUSavings/>
+if(location.pathname==='/transfers')return <FNCUMove/>
+if(location.pathname==='/private-banking')return <FNCUProfile/>
+if(location.pathname==='/accounts')return <FNCUAccounts/>
+if(location.pathname==='/transactions')return <FNCUTransactions/>
+if(location.pathname==='/cards')return <FNCUCards/>
+if(location.pathname==='/security')return <SecurityCenterV2/>
+if(location.pathname==='/communication')return <UnifiedCommunicationCenter/>
+if(location.pathname==='/beneficiaries')return <UnifiedBeneficiaries/>
+if(location.pathname==='/statements')return <UnifiedStatements/>
+if(location.pathname==='/settings')return <UnifiedSettings/>
+return <FNCUHome/>}
 function Root(){const location=useLocation();if(location.pathname==='/login')return <AuthPage/>;return <CustomerProvider><ProtectedRoot/></CustomerProvider>}
 createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><Root/></BrowserRouter></StrictMode>)
