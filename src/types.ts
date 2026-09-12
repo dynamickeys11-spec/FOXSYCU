@@ -41,8 +41,16 @@ export interface Vault {
   name: string
   balance: number
   apy: number
-  target?: number
+  target: number
   interestEarned?: number
+  opened: string
+}
+
+export interface Beneficiary {
+  id: string
+  name: string
+  accountLast4: string
+  added: string
 }
 
 export interface CustomerSnapshot {
@@ -56,5 +64,10 @@ export interface CustomerSnapshot {
   transactions: Transaction[]
   vaults: Vault[]
   savingsVaults: Vault[]
+  beneficiaries: Beneficiary[]
+  accountType: string
+  accountStatus: string
+  accountOpened: string
+  customerSince: string
   account?: { id: string; type: 'checking'; currency: 'USD'; last4: string; openingBalance: number; opened: string }
 }
