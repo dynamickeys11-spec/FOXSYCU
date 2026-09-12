@@ -11,11 +11,11 @@ function withShell(Page: React.ComponentType) {
 }
 
 export const UnifiedSecurityCenter = withShell(SecurityCenter)
-export const UnifiedCommunicationCenter = withShell(CommunicationCenterV2)
+export const UnifiedCommunicationCenter = CommunicationCenterV2
 export const UnifiedPrivateBanking = withShell(PrivateBanking)
-export const UnifiedBeneficiaries = withShell(BeneficiariesCenter)
-export const UnifiedSavings = withShell(SavingsCenter)
-export const UnifiedCards = withShell(CardsCenter)
-export const UnifiedStatements = withShell(StatementsCenter)
+export const UnifiedBeneficiaries = BeneficiariesCenter
+export const UnifiedSavings = SavingsCenter
+export const UnifiedCards = CardsCenter
+export const UnifiedStatements = StatementsCenter
 export const UnifiedSettings = withShell(SettingsPage)
-export const UnifiedTransfers = withShell(TransferCenter)
+export const UnifiedTransfers = TransferCenter
