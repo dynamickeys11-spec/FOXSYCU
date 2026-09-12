@@ -41,3 +41,29 @@ export async function createAndExecuteMoneyMovement(input: MoneyMovementInput) {
   if (created.status === 'pending') return created
   return executeMoneyMovement(created.movement_id)
 }
+
+export async function createTransferSchedule(input: {
+  rail: MoneyMovementRail
+  sourceAccountId: string
+  beneficiaryId?: string | null
+  amount: number
+  cadence: 'daily' | 'weekly' | 'monthly'
+  nextRunAt: string
+  endAt?: string | null
+  memo?: string | null
+  currency?: string
+}) {
+  const { data, error } = await supabase.rpc('create_transfer_schedule', {
+    p_rail: input.rail,
+    p_source_account_id: input.sourceAccountId,
+    p_beneficiary_id: input.beneficiaryId ?? null,
+    p_amount: input.amount,
+    p_cadence: input.cadence,
+    p_next_run_at: input.nextRunAt,
+    p_end_at: input.endAt ?? null,
+    p_memo: input.memo ?? null,
+    p_currency: input.currency ?? 'USD',
+  })
+  if (error) throw error
+  return data as string
+}
