@@ -16,6 +16,9 @@
     "react-router-dom": "latest"
   },
   "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/node": "latest",
     "typescript": "latest",
     "vite": "latest"
   }
