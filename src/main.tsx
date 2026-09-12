@@ -6,6 +6,7 @@ import { MFAChallenge } from './MFAChallenge'
 import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import App from './AppLedger'
+import AdminPage from './AdminPage'
 import ProfilePage from './ProfilePage'
 import { applyLegacyAvatarBridge } from './legacyAvatarBridge'
 import './styles.css'
@@ -23,5 +24,6 @@ function useLegacyIdentityBridge(profile:any,account:any){useEffect(()=>{if(!pro
 function Loading(){return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',fontFamily:'Inter,system-ui,sans-serif'}}>Loading FOXSYCU…</main>}
 function ProtectedRoot(){const{session,loading,profile,account}=useCustomerData();useLegacyControlBridge();useLegacyIdentityBridge(profile,account);const gate=useMfaGate(session);if(loading)return <Loading/>;if(!session)return <AuthPage/>;if(!gate.ready)return <Loading/>;if(gate.needs)return <MFAChallenge onVerified={()=>gate.setNeeds(false)}/>;return <App/>}
 function ProtectedProfile(){const{session,loading}=useCustomerData();const gate=useMfaGate(session);if(loading)return <Loading/>;if(!session)return <AuthPage/>;if(!gate.ready)return <Loading/>;if(gate.needs)return <MFAChallenge onVerified={()=>gate.setNeeds(false)}/>;return <ProfilePage/>}
-function Root(){const location=useLocation();const navigate=useNavigate();useEffect(()=>{if(location.pathname==='/private-banking')navigate('/profile',{replace:true})},[location.pathname,navigate]);if(location.pathname==='/login')return <AuthPage/>;return <CustomerProvider>{location.pathname==='/profile'?<ProtectedProfile/>:<ProtectedRoot/>}</CustomerProvider>}
+function ProtectedAdmin(){const{session,loading}=useCustomerData();const gate=useMfaGate(session);if(loading)return <Loading/>;if(!session)return <AuthPage/>;if(!gate.ready)return <Loading/>;if(gate.needs)return <MFAChallenge onVerified={()=>gate.setNeeds(false)}/>;return <AdminPage/>}
+function Root(){const location=useLocation();const navigate=useNavigate();useEffect(()=>{if(location.pathname==='/private-banking')navigate('/profile',{replace:true})},[location.pathname,navigate]);if(location.pathname==='/login')return <AuthPage/>;return <CustomerProvider>{location.pathname==='/profile'?<ProtectedProfile/>:location.pathname==='/admin'?<ProtectedAdmin/>:<ProtectedRoot/>}</CustomerProvider>}
 createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><Root/></BrowserRouter></StrictMode>)
