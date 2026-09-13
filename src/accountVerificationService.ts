@@ -72,12 +72,10 @@ export async function verifyUSBankAccount(input: USBankAccountInput): Promise<Ve
   return { verified: true, verification_status: 'verified', account_number: accountNumber, account_name: accountName, provider: 'synthetic-us-validation', routing_number: routingNumber, message: 'Synthetic U.S. account details passed format validation. No live ownership check was performed.' }
 }
 
-/** Backwards-compatible U.S.-oriented resolver for unfinished UI code. */
 export async function resolveUSBankAccount(accountNumber: string, routingNumber: string, accountHolderName?: string) {
   return verifyUSBankAccount({ routingNumber, accountNumber, accountHolderName })
 }
 
-/** Persist a verified synthetic external account using the actual schema. */
 export async function saveVerifiedExternalAccount(input: USBankAccountInput) {
   const result = await verifyUSBankAccount(input)
   if (!result.verified) throw new Error(result.message)
@@ -105,4 +103,21 @@ export async function saveVerifiedExternalAccount(input: USBankAccountInput) {
 
   if (error) throw error
   return { ...result, externalAccount: data }
+}
+
+/** Deactivate rather than hard-delete a linked account so the relationship remains auditable. */
+export async function deactivateExternalAccount(externalAccountId: string) {
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) throw new Error('Sign in before removing an external account.')
+
+  const { data, error } = await supabase
+    .from('external_accounts')
+    .update({ status: 'inactive' })
+    .eq('id', externalAccountId)
+    .eq('user_id', auth.user.id)
+    .select('id,status')
+    .single()
+
+  if (error) throw error
+  return data
 }
