@@ -27,13 +27,13 @@ function buildSyntheticLedger(): AccountLedger {
     }
   }
   const recent = [
-    { id: 'TX-PEND-01', entryType: 'credit' as const, kind: 'Deposit', category: 'Pending funding', description: 'Incoming funding under review', counterparty: 'External funding source', amount: 5000, status: 'Pending' as const, reference: 'DEP-202609-0001', date: isoDate(2026, 9, 8), time: '11:10 AM' },
-    { id: 'TX-PEND-02', entryType: 'debit' as const, kind: 'Payment', category: 'Pending card payment', description: 'Card payment authorization', counterparty: 'Merchant network', amount: -5000, status: 'Pending' as const, reference: 'PAY-202609-0002', date: isoDate(2026, 9, 9), time: '03:25 PM' },
-    { id: 'TX-FAIL-01', entryType: 'credit' as const, kind: 'Deposit', category: 'Failed deposit', description: 'External funding attempt', counterparty: 'External funding source', amount: 7200, status: 'Failed' as const, reference: 'DEP-202608-0017', date: isoDate(2026, 8, 20), time: '10:45 AM' },
-    { id: 'TX-FAIL-02', entryType: 'debit' as const, kind: 'Payment', category: 'Failed payment', description: 'Merchant payment declined', counterparty: 'Merchant network', amount: -7200, status: 'Failed' as const, reference: 'PAY-202608-0018', date: isoDate(2026, 8, 21), time: '01:12 PM' },
-    { id: 'TX-REV-01', entryType: 'credit' as const, kind: 'Deposit', category: 'Reversal', description: 'Reversed incoming transfer', counterparty: 'External funding source', amount: 9100, status: 'Reversed' as const, reference: 'REV-202607-0031', date: isoDate(2026, 7, 14), time: '09:30 AM' },
-    { id: 'TX-REV-02', entryType: 'debit' as const, kind: 'Transfer', category: 'Reversal', description: 'Reversed account transfer', counterparty: 'External beneficiary', amount: -9100, status: 'Reversed' as const, reference: 'REV-202607-0032', date: isoDate(2026, 7, 15), time: '02:15 PM' },
-  ]
+    { id: 'TX-PEND-01', entryType: 'credit' as const, kind: 'Deposit' as const, category: 'Pending funding', description: 'Incoming funding under review', counterparty: 'External funding source', amount: 5000, status: 'Pending' as const, reference: 'DEP-202609-0001', date: isoDate(2026, 9, 8), time: '11:10 AM' },
+    { id: 'TX-PEND-02', entryType: 'debit' as const, kind: 'Payment' as const, category: 'Pending card payment', description: 'Card payment authorization', counterparty: 'Merchant network', amount: -5000, status: 'Pending' as const, reference: 'PAY-202609-0002', date: isoDate(2026, 9, 9), time: '03:25 PM' },
+    { id: 'TX-FAIL-01', entryType: 'credit' as const, kind: 'Deposit' as const, category: 'Failed deposit', description: 'External funding attempt', counterparty: 'External funding source', amount: 7200, status: 'Failed' as const, reference: 'DEP-202608-0017', date: isoDate(2026, 8, 20), time: '10:45 AM' },
+    { id: 'TX-FAIL-02', entryType: 'debit' as const, kind: 'Payment' as const, category: 'Failed payment', description: 'Merchant payment declined', counterparty: 'Merchant network', amount: -7200, status: 'Failed' as const, reference: 'PAY-202608-0018', date: isoDate(2026, 8, 21), time: '01:12 PM' },
+    { id: 'TX-REV-01', entryType: 'credit' as const, kind: 'Deposit' as const, category: 'Reversal', description: 'Reversed incoming transfer', counterparty: 'External funding source', amount: 9100, status: 'Reversed' as const, reference: 'REV-202607-0031', date: isoDate(2026, 7, 14), time: '09:30 AM' },
+    { id: 'TX-REV-02', entryType: 'debit' as const, kind: 'Transfer' as const, category: 'Reversal', description: 'Reversed account transfer', counterparty: 'External beneficiary', amount: -9100, status: 'Reversed' as const, reference: 'REV-202607-0032', date: isoDate(2026, 7, 15), time: '02:15 PM' },
+  ] as const
   for (const item of recent) entries.push(makeEntry({ ...item, accountId: ACCOUNT_ID, currency: 'USD', memo: 'Synthetic historical activity', createdAt: item.date }))
   entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id))
   return { accountId: ACCOUNT_ID, currency: 'USD', openingBalance: OPENING_BALANCE, entries }
