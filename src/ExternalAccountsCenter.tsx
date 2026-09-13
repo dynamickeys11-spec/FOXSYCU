@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CheckCircle2, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { useCustomerData } from './CustomerProvider'
-import { isValidUSRoutingNumber, saveVerifiedExternalAccount } from './accountVerificationService'
+import { deactivateExternalAccount, isValidUSRoutingNumber, saveVerifiedExternalAccount } from './accountVerificationService'
 import './financial-center.css'
 
 const mask = (value: string) => `••••${value.slice(-4)}`
@@ -16,6 +16,7 @@ export default function ExternalAccountsCenter() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
+  const [removingId, setRemovingId] = useState<string | null>(null)
 
   const reset = () => {
     setRoutingNumber(''); setAccountNumber(''); setAccountName(''); setAccountType('checking'); setError(''); setNotice(''); setOpen(false)
@@ -37,6 +38,18 @@ export default function ExternalAccountsCenter() {
     } finally { setSaving(false) }
   }
 
+  const removeAccount = async (id: string) => {
+    if (!window.confirm('Remove this linked U.S. account? It will be deactivated and retained for audit history.')) return
+    setRemovingId(id); setError(''); setNotice('')
+    try {
+      await deactivateExternalAccount(id)
+      await refresh()
+      setNotice('External account removed from active linked accounts.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to remove external account.')
+    } finally { setRemovingId(null) }
+  }
+
   return <main className="financial-center">
     <header className="financial-hero">
       <div><span className="eyebrow">MONEY MOVEMENT · U.S. ACCOUNTS</span><h1>External accounts</h1><p>Manage U.S. bank accounts used for transfers and funding.</p></div>
@@ -45,22 +58,24 @@ export default function ExternalAccountsCenter() {
 
     <section className="financial-grid">
       <article className="financial-card wide">
-        <div className="financial-card-head"><div><h2>Linked U.S. accounts</h2><p>{externalAccounts.length} account{externalAccounts.length === 1 ? '' : 's'} connected</p></div><ShieldCheck size={20}/></div>
+        <div className="financial-card-head"><div><h2>Linked U.S. accounts</h2><p>{externalAccounts.length} active account{externalAccounts.length === 1 ? '' : 's'} connected</p></div><ShieldCheck size={20}/></div>
         {externalAccounts.length ? <div className="financial-list">{externalAccounts.map(account => <div className="financial-list-row" key={account.id}>
-          <span className="financial-icon"><ShieldCheck size={16}/></span><div><b>{account.institution_name}</b><small>{account.account_type} · {mask(String(account.account_number_last4 || ''))}</small></div><span className="status-pill"><CheckCircle2 size={13}/> {account.verification_status}</span><button className="icon-button" title="Remove account" disabled><Trash2 size={15}/></button>
+          <span className="financial-icon"><ShieldCheck size={16}/></span><div><b>{account.institution_name || 'U.S. bank account'}</b><small>{account.account_type} · {mask(String(account.account_number_last4 || ''))}{account.account_name ? ` · ${account.account_name}` : ''}</small></div><span className="status-pill"><CheckCircle2 size={13}/> {account.verification_status}</span><button className="icon-button" title="Remove account" aria-label="Remove account" disabled={removingId === account.id} onClick={() => void removeAccount(account.id)}>{removingId === account.id ? '…' : <Trash2 size={15}/>}</button>
         </div>)}</div> : <div className="empty-state"><ShieldCheck size={24}/><b>No external accounts yet</b><p>Add a U.S. routing number, account number and account-holder name to create a synthetic linked account.</p></div>}
       </article>
     </section>
 
+    {error && <div className="form-error" role="alert">{error}</div>}
+    {notice && <div className="available-note" role="status"><CheckCircle2 size={15}/><span>{notice}</span></div>}
+
     {open && <div className="drawer-backdrop" onClick={reset}><aside className="drawer" onClick={e => e.stopPropagation()}>
-      <div className="drawer-head"><div><small>U.S. EXTERNAL ACCOUNT</small><h2>Add account</h2></div><button className="icon-button" onClick={reset}>×</button></div>
+      <div className="drawer-head"><div><small>U.S. EXTERNAL ACCOUNT</small><h2>Add account</h2></div><button className="icon-button" onClick={reset} aria-label="Close">×</button></div>
       <div className="form-grid">
         <label>Routing number<input inputMode="numeric" maxLength={9} value={routingNumber} onChange={e => setRoutingNumber(e.target.value.replace(/\D/g, ''))} placeholder="9 digits"/></label>
         <label>Account number<input inputMode="numeric" maxLength={17} value={accountNumber} onChange={e => setAccountNumber(e.target.value.replace(/\D/g, ''))} placeholder="4–17 digits"/></label>
         <label>Account holder name<input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="Name on account"/></label>
         <label>Account type<select value={accountType} onChange={e => setAccountType(e.target.value as 'checking' | 'savings')}><option value="checking">Checking</option><option value="savings">Savings</option></select></label>
-        {error && <div className="form-error">{error}</div>}
-        {notice && <div className="available-note"><CheckCircle2 size={15}/><span>{notice}</span></div>}
+        <div className="available-note"><ShieldCheck size={15}/><span>U.S. ABA and account-number format checks only. No live ownership verification is performed.</span></div>
         <div className="review-actions"><button className="button secondary" onClick={reset}>Cancel</button><button className="button primary" disabled={saving} onClick={submit}>{saving ? 'Verifying…' : 'Verify & add'}</button></div>
       </div>
     </aside></div>}
