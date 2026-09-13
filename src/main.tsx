@@ -19,6 +19,7 @@ import './auth.css'
 import './ledger-shell.css'
 import './card-atm.css'
 import './receipt-presentation.css'
+import './polish.css'
 
 function useMfaGate(session:any){const[ready,setReady]=useState(false);const[needs,setNeeds]=useState(false);useEffect(()=>{let active=true;const check=async()=>{if(!session){setReady(false);setNeeds(false);return}const{data,error}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();if(!active)return;if(error||data.nextLevel!=='aal2'||data.currentLevel==='aal2'){setNeeds(false);setReady(true);return}const token=sessionStorage.getItem('foxsycu.mfa.recovery.grant');if(token){const{data:grant}=await supabase.rpc('has_mfa_recovery_grant',{p_grant_token:token});if(grant?.valid){setNeeds(false);setReady(true);return}sessionStorage.removeItem('foxsycu.mfa.recovery.grant')}setNeeds(true);setReady(true)};void check();return()=>{active=false}},[session]);return{ready,needs,setNeeds}}
 function useReceiptPresentation(){useEffect(()=>{const mark=()=>{const candidates=Array.from(document.querySelectorAll<HTMLElement>('.modal,.drawer,[role="dialog"]'));for(const node of candidates){const text=(node.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();if(/transaction receipt|receipt details|transaction details/.test(text))node.classList.add('foxsycu-receipt-modal')}};mark();const observer=new MutationObserver(mark);observer.observe(document.body,{subtree:true,childList:true});return()=>observer.disconnect()},[])}
