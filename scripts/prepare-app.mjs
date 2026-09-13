@@ -1,14 +1,26 @@
 import fs from 'node:fs'
 
-const path = 'src/AppLedger.tsx'
-const source = fs.readFileSync(path, 'utf8')
+const appPath = 'src/AppLedger.tsx'
+const canonicalPath = 'src/CanonicalLedgerApp.tsx'
+const mainPath = 'src/main.tsx'
+const app = fs.readFileSync(appPath, 'utf8')
+const canonical = fs.readFileSync(canonicalPath, 'utf8')
+const main = fs.readFileSync(mainPath, 'utf8')
 
-if (!source.includes("from './data/runtimeBanking'")) {
-  throw new Error('FOXSYCU AppLedger must include the runtime banking integration before build.')
+if (!app.includes("./CanonicalLedgerApp")) {
+  throw new Error('FOXSYCU AppLedger must delegate to the canonical live banking application.')
 }
 
-if (!source.includes('FOXSYCU') || !source.includes('John Doe')) {
-  throw new Error('FOXSYCU AppLedger must remain the canonical John Doe FOXSYCU banking interface.')
+if (!canonical.includes("from './CustomerProvider'") || !canonical.includes("from './supabaseClient'")) {
+  throw new Error('FOXSYCU canonical banking UI must use the live Supabase customer data layer.')
 }
 
-console.log('FOXSYCU: canonical AppLedger banking UI verified.')
+if (!main.includes("./TransferCenterV3") || !main.includes("./CardsCenterV5")) {
+  throw new Error('FOXSYCU main routing must use the live transfer and card implementations.')
+}
+
+if (main.includes('StatementsCenterV3') || canonical.includes('Statements & documents')) {
+  throw new Error('FOXSYCU customer UI must not expose the removed statements/documents feature.')
+}
+
+console.log('FOXSYCU: canonical live banking UI verified.')
