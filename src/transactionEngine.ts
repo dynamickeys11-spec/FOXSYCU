@@ -1,6 +1,6 @@
 import type { Transaction, TransactionType } from './types'
 
-const CHECKING = { name: 'FOXSYCU Private Checking', accountLast4: '4821' }
+const CHECKING = { name: 'Checking Account', accountLast4: '4821' }
 const institutions = [
   { name: 'JPMorgan Chase Bank, N.A.', type: 'National bank' }, { name: 'Bank of America, N.A.', type: 'National bank' },
   { name: 'Wells Fargo Bank, N.A.', type: 'National bank' }, { name: 'Citibank, N.A.', type: 'National bank' },
@@ -83,8 +83,8 @@ function withRunningBalances(transactions: Transaction[], openingBalance: number
   }).sort((a, b) => new Date(`${b.date} ${b.time}`).getTime() - new Date(`${a.date} ${a.time}`).getTime())
 }
 
-/** Builds the synthetic 2021–2026 banking universe. Realistic fields are modeled without claiming external network execution. */
-export function buildTransactionUniverse(seed: Transaction[]): Transaction[] {
+/** Builds the synthetic banking universe from the preserved seed ledger. */
+export function buildTransactionUniverse(seed: Transaction[], openingBalance = 2_679_325, targetBalance = 5_000_000): Transaction[] {
   const expanded = seed.flatMap((t, i) => expandMonthlyActivity(t, i))
   const detailed = expanded.map((t, i) => {
     if (t.id === 'TX-20260906-005') return enrichSingle({ ...t, type: 'TRANSFER', memo: 'Property reserve', counterparty: 'Alex Smith' }, i)
@@ -98,13 +98,13 @@ export function buildTransactionUniverse(seed: Transaction[]): Transaction[] {
     { id: 'CARD-20260904-4821', kind: 'Card Purchase', type: 'CARD_PURCHASE', status: 'Completed', amount: -1249, currency: 'USD', direction: 'DEBIT', description: 'Apple Store', date: 'Sep 04, 2026', time: '03:42 PM', reference: 'CARD-260904-4821', merchant: 'Apple Store', merchantCategory: 'Electronics', counterparty: 'Apple Store', category: 'Electronics', fee: 0 },
   ]
   const all = [...detailed, ...current]
-  const posted = 125000 + all.filter(t => t.status === 'Completed').reduce((sum, t) => sum + ledgerImpact(t), 0)
-  const adjustment = Number((5000000 - posted).toFixed(2))
-  if (Math.abs(adjustment) > 0.01) all.push(enrichSingle({ id: 'TX-RECON-2026', kind: adjustment >= 0 ? 'Deposit' : 'Transfer', type: adjustment >= 0 ? 'INTERNAL_TRANSFER' : 'TRANSFER', status: 'Completed', amount: adjustment, currency: 'USD', description: 'Portfolio liquidity transfer', date: 'Sep 10, 2026', time: '03:17 PM', reference: 'FX-260910-RECON', counterparty: 'John Doe — linked investment account', category: 'Treasury / liquidity', memo: 'Portfolio reconciliation entry', fee: 0 }, 9999))
-  return withRunningBalances(all, 125000)
+  const posted = openingBalance + all.filter(t => t.status === 'Completed').reduce((sum, t) => sum + ledgerImpact(t), 0)
+  const adjustment = Number((targetBalance - posted).toFixed(2))
+  if (Math.abs(adjustment) > 0.01) all.push(enrichSingle({ id: 'TX-RECON-2026', kind: adjustment >= 0 ? 'Deposit' : 'Transfer', type: adjustment >= 0 ? 'INTERNAL_TRANSFER' : 'TRANSFER', status: 'Completed', amount: adjustment, currency: 'USD', description: 'Portfolio liquidity transfer', date: 'Sep 10, 2026', time: '03:17 PM', reference: 'FX-260910-RECON', counterparty: 'Linked investment account', category: 'Treasury / liquidity', memo: 'Portfolio reconciliation entry', fee: 0 }, 9999))
+  return withRunningBalances(all, openingBalance)
 }
 
-export function calculateBalances(transactions: Transaction[], openingBalance = 125000) {
+export function calculateBalances(transactions: Transaction[], openingBalance = 2_679_325) {
   const posted = openingBalance + transactions.filter(t => t.status === 'Completed').reduce((sum, t) => sum + ledgerImpact(t), 0)
   const pendingDebits = transactions.filter(t => t.status === 'Pending' && t.amount < 0).reduce((sum, t) => sum + Math.abs(t.amount) + (t.fee || 0), 0)
   const pendingCredits = transactions.filter(t => t.status === 'Pending' && t.amount > 0).reduce((sum, t) => sum + t.amount - (t.fee || 0), 0)
