@@ -11,89 +11,30 @@ type CustomerData = { loading: boolean; session: Session | null; profile: any | 
 const CustomerContext = createContext<CustomerData | null>(null)
 const universe = buildTransactionUniverse(seed.transactions)
 const caseNumber = (prefix: string, index: number) => `FX-${new Date().getFullYear()}-${prefix}${String(index).padStart(3, '0')}`
-
-function dbTransaction(t: Transaction, userId: string, accountId: string) {
-  return { user_id: userId, account_id: accountId, reference: t.reference, transaction_type: t.type ?? 'TRANSFER', direction: t.amount >= 0 ? 'credit' : 'debit', amount: Math.abs(t.amount), fee: t.fee ?? 0, currency: t.currency, status: t.status.toLowerCase(), counterparty: t.counterparty, description: t.description, memo: t.memo, initiated_at: t.initiatedAt ?? new Date().toISOString(), effective_date: new Date(t.effectiveDate ?? t.date).toISOString().slice(0, 10), posted_at: t.postedAt ? new Date(t.postedAt).toISOString() : null, available_balance_after: t.availableBalanceAfter, posted_balance_after: t.postedBalanceAfter, metadata: { ...(t.metadata ?? {}), synthetic: true } }
-}
-
+function dbTransaction(t: Transaction, userId: string, accountId: string) { return { user_id: userId, account_id: accountId, reference: t.reference, transaction_type: t.type ?? 'TRANSFER', direction: t.amount >= 0 ? 'credit' : 'debit', amount: Math.abs(t.amount), fee: t.fee ?? 0, currency: t.currency, status: t.status.toLowerCase(), counterparty: t.counterparty, description: t.description, memo: t.memo, initiated_at: t.initiatedAt ?? new Date().toISOString(), effective_date: new Date(t.effectiveDate ?? t.date).toISOString().slice(0, 10), posted_at: t.postedAt ? new Date(t.postedAt).toISOString() : null, available_balance_after: t.availableBalanceAfter, posted_balance_after: t.postedBalanceAfter, metadata: { ...(t.metadata ?? {}), synthetic: true } } }
 async function ensureCustomer(userId: string) {
-  const { data: authData } = await supabase.auth.getUser()
-  const meta = authData.user?.user_metadata ?? {}
-  const existingProfile = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle()
-  if (!existingProfile.data) {
-    const fullName = String(meta.full_name || 'FOXSYCU Customer').trim()
-    await supabase.from('profiles').upsert({ id: userId, full_name: fullName, preferred_name: meta.preferred_name || null, phone: meta.phone || null, date_of_birth: meta.date_of_birth || null, address_line1: meta.address_line1 || null, city: meta.city || null, state_region: meta.state_region || null, postal_code: meta.postal_code || null, country: meta.country || 'United States', occupation: meta.occupation || null, employment_status: meta.employment_status || null, tier: 'Premium User', currency: 'USD', customer_since: new Date().toISOString().slice(0, 10), profile_completed: Boolean(meta.full_name && meta.address_line1 && meta.city) })
-    await supabase.from('audit_logs').insert({ user_id: userId, action: 'customer_profile_created', resource_type: 'profile', resource_id: userId, metadata: { synthetic: true } })
-  }
+  const { data: authData } = await supabase.auth.getUser(); const meta = authData.user?.user_metadata ?? {}; const existingProfile = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle()
+  if (!existingProfile.data) { const fullName = String(meta.full_name || 'FOXSYCU Customer').trim(); await supabase.from('profiles').upsert({ id: userId, full_name: fullName, preferred_name: meta.preferred_name || null, phone: meta.phone || null, date_of_birth: meta.date_of_birth || null, address_line1: meta.address_line1 || null, city: meta.city || null, state_region: meta.state_region || null, postal_code: meta.postal_code || null, country: meta.country || 'United States', occupation: meta.occupation || null, employment_status: meta.employment_status || null, tier: 'Premium User', currency: 'USD', customer_since: new Date().toISOString().slice(0, 10), profile_completed: Boolean(meta.full_name && meta.address_line1 && meta.city) }); await supabase.from('audit_logs').insert({ user_id: userId, action: 'customer_profile_created', resource_type: 'profile', resource_id: userId, metadata: { synthetic: true } }) }
   let { data: account } = await supabase.from('accounts').select('*').eq('user_id', userId).eq('account_type', 'checking').maybeSingle()
-  if (!account) {
-    const created = await supabase.from('accounts').insert({ user_id: userId, account_type: CANONICAL_ACCOUNT.accountType, account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).select('*').single()
-    if (created.error) throw created.error
-    account = created.data
-  } else {
-    const aligned = await supabase.from('accounts').update({ account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active' }).eq('id', account.id).select('*').single()
-    if (aligned.error) throw aligned.error
-    account = aligned.data
-  }
+  if (!account) { const created = await supabase.from('accounts').insert({ user_id: userId, account_type: CANONICAL_ACCOUNT.accountType, account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).select('*').single(); if (created.error) throw created.error; account = created.data } else { const aligned = await supabase.from('accounts').update({ account_name: CANONICAL_ACCOUNT.accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active' }).eq('id', account.id).select('*').single(); if (aligned.error) throw aligned.error; account = aligned.data }
   const existingVaults = await supabase.from('savings_vaults').select('*').eq('user_id', userId).order('created_at')
-  if (!existingVaults.data?.length) {
-    const createdVaults = await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' })))
-    if (createdVaults.error) throw createdVaults.error
-  } else {
-    for (let i = 0; i < Math.min(existingVaults.data.length, CANONICAL_VAULTS.length); i += 1) {
-      const v = CANONICAL_VAULTS[i]
-      const result = await supabase.from('savings_vaults').update({ name: v.name, target_amount: v.target, apy: v.apy, status: 'active' }).eq('id', existingVaults.data[i].id)
-      if (result.error) throw result.error
-    }
-  }
-  const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-  if (!beneficiaryCount) await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active' })))
-  const { count: transactionCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-  if (!transactionCount) for (let i = 0; i < universe.length; i += 100) { const result = await supabase.from('transactions').insert(universe.slice(i, i + 100).map(t => dbTransaction(t, userId, account!.id))); if (result.error) throw result.error }
-  const { count: notificationCount } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-  if (!notificationCount) await supabase.from('notifications').insert([{ user_id: userId, title: 'Transfer alert', body: 'A savings transfer is pending authorization.', notification_type: 'transaction' }, { user_id: userId, title: 'Security alert', body: 'Your recommended security controls are active.', notification_type: 'security' }])
-  await Promise.all([
-    supabase.from('security_preferences').upsert({ user_id: userId }),
-    supabase.from('card_controls').upsert({ user_id: userId, account_id: account!.id, last4: CANONICAL_ACCOUNT.last4 }, { onConflict: 'user_id,account_id' }),
-  ])
-  const { count: supportCount } = await supabase.from('support_cases').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-  if (!supportCount) await supabase.from('support_cases').insert([{ user_id: userId, case_number: caseNumber('AR', 1), subject: 'Account relationship review', status: 'open', priority: 'priority' }, { user_id: userId, case_number: caseNumber('ST', 2), subject: 'Statement request', status: 'resolved', priority: 'normal' }])
-  const { count: messageCount } = await supabase.from('secure_messages').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-  if (!messageCount) await supabase.from('secure_messages').insert([{ user_id: userId, subject: 'Relationship team · Quarterly review', body: 'Your latest relationship summary is ready.' }, { user_id: userId, subject: 'Security · Device confirmation', body: 'Your trusted-device list was updated.' }])
+  if (!existingVaults.data?.length) { const createdVaults = await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' }))); if (createdVaults.error) throw createdVaults.error } else { for (let i = 0; i < Math.min(existingVaults.data.length, CANONICAL_VAULTS.length); i += 1) { const v = CANONICAL_VAULTS[i]; const result = await supabase.from('savings_vaults').update({ name: v.name, target_amount: v.target, apy: v.apy, status: 'active' }).eq('id', existingVaults.data[i].id); if (result.error) throw result.error } }
+  const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!beneficiaryCount) await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active' })))
+  const { count: transactionCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!transactionCount) for (let i = 0; i < universe.length; i += 100) { const result = await supabase.from('transactions').insert(universe.slice(i, i + 100).map(t => dbTransaction(t, userId, account!.id))); if (result.error) throw result.error }
+  const { count: notificationCount } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!notificationCount) await supabase.from('notifications').insert([{ user_id: userId, title: 'Transfer alert', body: 'A savings transfer is pending authorization.', notification_type: 'transaction' }, { user_id: userId, title: 'Security alert', body: 'Your recommended security controls are active.', notification_type: 'security' }])
+  await Promise.all([supabase.from('security_preferences').upsert({ user_id: userId }), supabase.from('card_controls').upsert({ user_id: userId, account_id: account!.id, last4: CANONICAL_ACCOUNT.last4 }, { onConflict: 'user_id,account_id' })])
+  const { count: supportCount } = await supabase.from('support_cases').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!supportCount) await supabase.from('support_cases').insert([{ user_id: userId, case_number: caseNumber('AR', 1), subject: 'Account relationship review', status: 'open', priority: 'priority' }, { user_id: userId, case_number: caseNumber('ST', 2), subject: 'Statement request', status: 'resolved', priority: 'normal' }])
+  const { count: messageCount } = await supabase.from('secure_messages').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!messageCount) await supabase.from('secure_messages').insert([{ user_id: userId, subject: 'Relationship team · Quarterly review', body: 'Your latest relationship summary is ready.' }, { user_id: userId, subject: 'Security · Device confirmation', body: 'Your trusted-device list was updated.' }])
 }
-
 function syncDashboardLedger(rows: any[]) {
   const normalized = rows.map(row => ({ id: row.id, reference: row.reference, type: row.transaction_type, status: row.status === 'completed' ? 'Completed' : row.status === 'pending' ? 'Pending' : row.status === 'failed' ? 'Failed' : 'Reversed', amount: row.direction === 'debit' ? -Number(row.amount) : Number(row.amount), currency: row.currency, direction: row.direction, description: row.description, date: row.effective_date, time: new Date(row.posted_at ?? row.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), counterparty: row.counterparty, memo: row.memo, fee: Number(row.fee ?? 0), effectiveDate: row.effective_date, postedBalanceAfter: row.posted_balance_after, availableBalanceAfter: row.available_balance_after, metadata: row.metadata ?? {} }))
-  try { localStorage.setItem('foxsycu.transaction-universe.v2', JSON.stringify(normalized)); localStorage.setItem('foxsycu.transactions', JSON.stringify(normalized)); window.dispatchEvent(new CustomEvent('foxsycu-customer-sync')) } catch {}
+  try { localStorage.setItem('foxsycu.transaction-universe.v2', JSON.stringify(normalized)); localStorage.setItem('foxsycu.transactions', JSON.stringify(normalized)); runtimeEngine.syncFromServerSnapshot(normalized); } catch {}
 }
-
-function syncLegacyCustomer(profile: any, account: any, vaults: any[]) {
-  if (!profile || !account) return
-  seed.name = profile.preferred_name || profile.full_name || seed.name
-  seed.accountStatus = account.status === 'active' ? 'Active' : account.status
-  seed.accountType = account.account_type === 'checking' ? 'Checking' : account.account_type
-  seed.accountOpened = CANONICAL_ACCOUNT.opened
-  seed.customerSince = profile.customer_since || seed.customerSince
-  seed.savingsBalance = vaults.reduce((sum, vault) => sum + Number(vault.balance || 0), 0)
-  seed.vaults = vaults.map(v => ({ ...v, balance: Number(v.balance || 0) }))
-}
-
+function syncLegacyCustomer(profile: any, account: any, vaults: any[]) { if (!profile || !account) return; seed.name = profile.preferred_name || profile.full_name || seed.name; seed.accountStatus = account.status === 'active' ? 'Active' : account.status; seed.accountType = account.account_type === 'checking' ? 'Checking' : account.account_type; seed.accountOpened = CANONICAL_ACCOUNT.opened; seed.customerSince = profile.customer_since || seed.customerSince; seed.savingsBalance = vaults.reduce((sum, vault) => sum + Number(vault.balance || 0), 0); seed.vaults = vaults.map(v => ({ ...v, balance: Number(v.balance || 0) })) }
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null); const [loading, setLoading] = useState(true)
-  const [data, setData] = useState<Omit<CustomerData, 'loading' | 'session' | 'refresh'>>({ profile: null, account: null, vaults: [], beneficiaries: [], transactions: [], notifications: [], statements: [], card: null, security: { two_fa: true, passkey: true, alerts: true }, supportCases: [], messages: [] })
-  const refresh = async () => {
-    if (!session?.user) return
-    await ensureCustomer(session.user.id); const uid = session.user.id
-    const [profile, account, vaults, beneficiaries, transactions, notifications, card, security, statements, supportCases, messages] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', uid).maybeSingle(), supabase.from('accounts').select('*').eq('user_id', uid).eq('account_type', 'checking').maybeSingle(), supabase.from('savings_vaults').select('*').eq('user_id', uid).order('created_at'), supabase.from('beneficiaries').select('*').eq('user_id', uid).order('created_at'), supabase.from('transactions').select('*').eq('user_id', uid).order('effective_date', { ascending: false }).order('created_at', { ascending: false }), supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }), supabase.from('card_controls').select('*').eq('user_id', uid).maybeSingle(), supabase.from('security_preferences').select('two_fa,passkey,alerts').eq('user_id', uid).maybeSingle(), supabase.from('statements').select('*').eq('user_id', uid).order('statement_month', { ascending: false }), supabase.from('support_cases').select('*').eq('user_id', uid).order('created_at', { ascending: false }), supabase.from('secure_messages').select('*').eq('user_id', uid).order('created_at', { ascending: false }),
-    ])
-    syncLegacyCustomer(profile.data, account.data, vaults.data ?? [])
-    syncDashboardLedger(transactions.data ?? [])
-    setData({ profile: profile.data, account: account.data, vaults: vaults.data ?? [], beneficiaries: beneficiaries.data ?? [], transactions: (transactions.data ?? []) as unknown as Transaction[], notifications: notifications.data ?? [], statements: statements.data ?? [], card: card.data, security: security.data ?? { two_fa: true, passkey: true, alerts: true }, supportCases: supportCases.data ?? [], messages: messages.data ?? [] })
-  }
+  const [session, setSession] = useState<Session | null>(null); const [loading, setLoading] = useState(true); const [data, setData] = useState<Omit<CustomerData, 'loading' | 'session' | 'refresh'>>({ profile: null, account: null, vaults: [], beneficiaries: [], transactions: [], notifications: [], statements: [], card: null, security: { two_fa: true, passkey: true, alerts: true }, supportCases: [], messages: [] })
+  const refresh = async () => { if (!session?.user) return; await ensureCustomer(session.user.id); const uid = session.user.id; const [profile, account, vaults, beneficiaries, transactions, notifications, card, security, statements, supportCases, messages] = await Promise.all([supabase.from('profiles').select('*').eq('id', uid).maybeSingle(), supabase.from('accounts').select('*').eq('user_id', uid).eq('account_type', 'checking').maybeSingle(), supabase.from('savings_vaults').select('*').eq('user_id', uid).order('created_at'), supabase.from('beneficiaries').select('*').eq('user_id', uid).order('created_at'), supabase.from('transactions').select('*').eq('user_id', uid).order('effective_date', { ascending: false }).order('created_at', { ascending: false }), supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }), supabase.from('card_controls').select('*').eq('user_id', uid).maybeSingle(), supabase.from('security_preferences').select('two_fa,passkey,alerts').eq('user_id', uid).maybeSingle(), supabase.from('statements').select('*').eq('user_id', uid).order('statement_month', { ascending: false }), supabase.from('support_cases').select('*').eq('user_id', uid).order('created_at', { ascending: false }), supabase.from('secure_messages').select('*').eq('user_id', uid).order('created_at', { ascending: false })]); syncLegacyCustomer(profile.data, account.data, vaults.data ?? []); syncDashboardLedger(transactions.data ?? []); setData({ profile: profile.data, account: account.data, vaults: vaults.data ?? [], beneficiaries: beneficiaries.data ?? [], transactions: (transactions.data ?? []) as unknown as Transaction[], notifications: notifications.data ?? [], statements: statements.data ?? [], card: card.data, security: security.data ?? { two_fa: true, passkey: true, alerts: true }, supportCases: supportCases.data ?? [], messages: messages.data ?? [] }) }
   useEffect(() => { let active = true; void supabase.auth.getSession().then(({ data }) => { if (active) { setSession(data.session); setLoading(false) } }); const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => { setSession(next); setLoading(false) }); return () => { active = false; listener.subscription.unsubscribe() } }, [])
-  useEffect(() => { if (session) void refresh() }, [session])
-  const value = useMemo(() => ({ ...data, loading, session, refresh }), [data, loading, session])
-  return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>
+  useEffect(() => { if (session) void refresh() }, [session]); const value = useMemo(() => ({ ...data, loading, session, refresh }), [data, loading, session]); return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>
 }
 export function useCustomerData() { const value = useContext(CustomerContext); if (!value) throw new Error('useCustomerData must be used inside CustomerProvider'); return value }
