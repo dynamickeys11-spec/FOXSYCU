@@ -44,10 +44,7 @@ export function isValidUSRoutingNumber(value: string) {
   return checksum % 10 === 0
 }
 
-/**
- * Return the small set of synthetic routing numbers used by the demo.
- * These are labels for testing the UI, not a directory of real institutions.
- */
+/** Synthetic routing labels used only by the demo. */
 export async function listUSBanks(): Promise<BankOption[]> {
   return [
     { name: 'FOXSYCU Synthetic Test Bank', routing_number: '021000021', active: true },
@@ -57,8 +54,8 @@ export async function listUSBanks(): Promise<BankOption[]> {
 
 /**
  * Validate a U.S. routing/account-number pair without claiming live ownership.
- * The result is deliberately marked synthetic so the UI cannot represent this
- * demo check as a real bank-account verification.
+ * The result is deliberately marked synthetic so this demo cannot represent
+ * format validation as a real external-bank ownership check.
  */
 export async function verifyUSBankAccount(input: USBankAccountInput): Promise<VerifiedBankAccount> {
   const routingNumber = cleanDigits(input.routingNumber)
@@ -66,46 +63,21 @@ export async function verifyUSBankAccount(input: USBankAccountInput): Promise<Ve
   const accountName = input.accountHolderName?.trim() || null
 
   if (!isValidUSRoutingNumber(routingNumber)) {
-    return {
-      verified: false,
-      verification_status: 'invalid',
-      account_number: accountNumber,
-      account_name: accountName,
-      provider: 'synthetic-us-validation',
-      routing_number: routingNumber,
-      message: 'Enter a valid 9-digit U.S. ABA routing number.',
-    }
+    return { verified: false, verification_status: 'invalid', account_number: accountNumber, account_name: accountName, provider: 'synthetic-us-validation', routing_number: routingNumber, message: 'Enter a valid 9-digit U.S. ABA routing number.' }
   }
-
   if (accountNumber.length < 4 || accountNumber.length > 17) {
-    return {
-      verified: false,
-      verification_status: 'invalid',
-      account_number: accountNumber,
-      account_name: accountName,
-      provider: 'synthetic-us-validation',
-      routing_number: routingNumber,
-      message: 'Enter a valid U.S. account number (4–17 digits).',
-    }
+    return { verified: false, verification_status: 'invalid', account_number: accountNumber, account_name: accountName, provider: 'synthetic-us-validation', routing_number: routingNumber, message: 'Enter a valid U.S. account number (4–17 digits).' }
   }
 
-  return {
-    verified: true,
-    verification_status: 'verified',
-    account_number: accountNumber,
-    account_name: accountName,
-    provider: 'synthetic-us-validation',
-    routing_number: routingNumber,
-    message: 'Synthetic U.S. account details passed format validation. No live ownership check was performed.',
-  }
+  return { verified: true, verification_status: 'verified', account_number: accountNumber, account_name: accountName, provider: 'synthetic-us-validation', routing_number: routingNumber, message: 'Synthetic U.S. account details passed format validation. No live ownership check was performed.' }
 }
 
-/** Backwards-compatible name for any unfinished UI code; now U.S.-oriented. */
+/** Backwards-compatible U.S.-oriented resolver for unfinished UI code. */
 export async function resolveUSBankAccount(accountNumber: string, routingNumber: string, accountHolderName?: string) {
   return verifyUSBankAccount({ routingNumber, accountNumber, accountHolderName })
 }
 
-/** Persist a verified synthetic external account when the caller is signed in. */
+/** Persist a verified synthetic external account using the actual schema. */
 export async function saveVerifiedExternalAccount(input: USBankAccountInput) {
   const result = await verifyUSBankAccount(input)
   if (!result.verified) throw new Error(result.message)
@@ -117,14 +89,16 @@ export async function saveVerifiedExternalAccount(input: USBankAccountInput) {
     .from('external_accounts')
     .insert({
       user_id: auth.user.id,
-      institution_name: 'Synthetic U.S. bank account',
-      account_type: input.accountType ?? 'checking',
-      account_masked: `••••${result.account_number.slice(-4)}`,
-      routing_number_last4: result.routing_number.slice(-4),
+      institution_name: 'FOXSYCU Synthetic U.S. Bank',
+      routing_number: result.routing_number,
       account_number_last4: result.account_number.slice(-4),
-      holder_name: result.account_name,
+      account_name: result.account_name,
+      account_type: input.accountType ?? 'checking',
       verification_status: result.verification_status,
-      metadata: { synthetic: true, provider: result.provider },
+      verification_provider: result.provider,
+      verified_at: new Date().toISOString(),
+      status: 'active',
+      metadata: { synthetic: true, provider: result.provider, disclosure: result.message },
     })
     .select('*')
     .single()
