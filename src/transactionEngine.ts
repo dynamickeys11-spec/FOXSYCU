@@ -7,6 +7,7 @@ const institutions = [
   { name: 'Wells Fargo Bank, N.A.', type: 'National bank' }, { name: 'Citibank, N.A.', type: 'National bank' },
   { name: 'U.S. Bank National Association', type: 'National bank' }, { name: 'PNC Bank, N.A.', type: 'National bank' },
   { name: 'Truist Bank', type: 'National bank' }, { name: 'Capital One, N.A.', type: 'National bank' },
+  { name: 'TD Bank, N.A.', type: 'National bank' }, { name: 'BMO Bank N.A.', type: 'National bank' },
 ]
 const merchants = [
   ['Apple Store', 'Electronics'], ['Adobe', 'Software'], ['Delta Air Lines', 'Travel'], ['United Airlines', 'Travel'],
@@ -14,7 +15,65 @@ const merchants = [
   ['Shell', 'Fuel'], ['Uber', 'Transportation'], ['Amazon', 'Retail'], ['AT&T', 'Telecommunications'], ['Comcast', 'Utilities'],
   ['GEICO', 'Insurance'], ['State Farm', 'Insurance'],
 ] as const
-const beneficiaries = [{ name: 'Alex Smith', accountLast4: '1920' }, { name: 'Maria Johnson', accountLast4: '4472' }, { name: 'Northstar Holdings', accountLast4: '8104' }]
+
+type Counterparty = {
+  name: string
+  accountLast4: string
+  institution: { name: string; type: string }
+  state: string
+  email: string
+}
+
+// Synthetic U.S. counterparties. They are intentionally fictional demo identities.
+// Usage is weighted so a few recurring contacts appear repeatedly, a middle group
+// appears occasionally, and a long tail appears only once or twice.
+const counterparties: Counterparty[] = [
+  { name: 'Alex Smith', accountLast4: '1920', institution: institutions[0], state: 'New York', email: 'alex.smith@example.test' },
+  { name: 'Maria Johnson', accountLast4: '4472', institution: institutions[1], state: 'California', email: 'maria.johnson@example.test' },
+  { name: 'Daniel Williams', accountLast4: '5831', institution: institutions[2], state: 'Texas', email: 'daniel.williams@example.test' },
+  { name: 'Sophia Brown', accountLast4: '2614', institution: institutions[3], state: 'Florida', email: 'sophia.brown@example.test' },
+  { name: 'Michael Davis', accountLast4: '9046', institution: institutions[4], state: 'Illinois', email: 'michael.davis@example.test' },
+  { name: 'Olivia Miller', accountLast4: '7318', institution: institutions[5], state: 'Georgia', email: 'olivia.miller@example.test' },
+  { name: 'James Wilson', accountLast4: '4185', institution: institutions[6], state: 'Virginia', email: 'james.wilson@example.test' },
+  { name: 'Emma Moore', accountLast4: '6502', institution: institutions[7], state: 'Washington', email: 'emma.moore@example.test' },
+  { name: 'Christopher Taylor', accountLast4: '3269', institution: institutions[8], state: 'Massachusetts', email: 'christopher.taylor@example.test' },
+  { name: 'Ava Anderson', accountLast4: '8753', institution: institutions[9], state: 'Arizona', email: 'ava.anderson@example.test' },
+  { name: 'Matthew Thomas', accountLast4: '5148', institution: institutions[0], state: 'New Jersey', email: 'matthew.thomas@example.test' },
+  { name: 'Isabella Jackson', accountLast4: '2386', institution: institutions[1], state: 'Colorado', email: 'isabella.jackson@example.test' },
+  { name: 'William White', accountLast4: '6714', institution: institutions[2], state: 'North Carolina', email: 'william.white@example.test' },
+  { name: 'Mia Harris', accountLast4: '4097', institution: institutions[3], state: 'Maryland', email: 'mia.harris@example.test' },
+  { name: 'Ethan Martin', accountLast4: '7521', institution: institutions[4], state: 'Ohio', email: 'ethan.martin@example.test' },
+  { name: 'Charlotte Thompson', accountLast4: '1843', institution: institutions[5], state: 'Pennsylvania', email: 'charlotte.thompson@example.test' },
+  { name: 'Benjamin Garcia', accountLast4: '9360', institution: institutions[6], state: 'Nevada', email: 'benjamin.garcia@example.test' },
+  { name: 'Amelia Martinez', accountLast4: '5274', institution: institutions[7], state: 'Oregon', email: 'amelia.martinez@example.test' },
+  { name: 'Lucas Robinson', accountLast4: '3158', institution: institutions[8], state: 'Connecticut', email: 'lucas.robinson@example.test' },
+  { name: 'Harper Clark', accountLast4: '8042', institution: institutions[9], state: 'Tennessee', email: 'harper.clark@example.test' },
+  { name: 'Henry Rodriguez', accountLast4: '4691', institution: institutions[0], state: 'Michigan', email: 'henry.rodriguez@example.test' },
+  { name: 'Evelyn Lewis', accountLast4: '6835', institution: institutions[1], state: 'Minnesota', email: 'evelyn.lewis@example.test' },
+  { name: 'Alexander Lee', accountLast4: '2407', institution: institutions[2], state: 'Utah', email: 'alexander.lee@example.test' },
+  { name: 'Abigail Walker', accountLast4: '5916', institution: institutions[3], state: 'Missouri', email: 'abigail.walker@example.test' },
+  { name: 'Daniel Hall', accountLast4: '7728', institution: institutions[4], state: 'Wisconsin', email: 'daniel.hall@example.test' },
+  { name: 'Ella Allen', accountLast4: '3482', institution: institutions[5], state: 'Indiana', email: 'ella.allen@example.test' },
+  { name: 'Sebastian Young', accountLast4: '6250', institution: institutions[6], state: 'South Carolina', email: 'sebastian.young@example.test' },
+  { name: 'Scarlett Hernandez', accountLast4: '9174', institution: institutions[7], state: 'New Mexico', email: 'scarlett.hernandez@example.test' },
+  { name: 'Jack King', accountLast4: '4638', institution: institutions[8], state: 'Rhode Island', email: 'jack.king@example.test' },
+  { name: 'Grace Wright', accountLast4: '7085', institution: institutions[9], state: 'Kentucky', email: 'grace.wright@example.test' },
+]
+
+// 10 recurring contacts dominate normal activity; 10 appear a few times; the
+// remaining 10 form a realistic long tail. Once the planned occurrences are used,
+// the recurring group is used again rather than fabricating new people.
+const plannedPartyIndexes = [
+  ...Array.from({ length: 6 }, () => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).flat(),
+  ...Array.from({ length: 3 }, () => [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]).flat(),
+  ...[20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
+]
+let plannedPartyCursor = 0
+const nextCounterparty = () => {
+  const index = plannedPartyIndexes[plannedPartyCursor % plannedPartyIndexes.length]
+  plannedPartyCursor += 1
+  return counterparties[index]
+}
 const slug = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
 const ledgerImpact = (t: Transaction) => t.amount - (t.fee || 0)
 
@@ -37,26 +96,28 @@ function makeReference(type: TransactionType, date: string, index: number) {
 
 function enrichSingle(t: Transaction, index: number): Transaction {
   const type = typeFor(t), debit = t.amount < 0, direction = debit ? 'DEBIT' : 'CREDIT'
-  const institution = institutions[index % institutions.length], beneficiary = beneficiaries[index % beneficiaries.length]
-  const party = { name: t.counterparty || beneficiary.name, accountLast4: beneficiary.accountLast4 }
+  const institution = institutions[index % institutions.length]
+  const existingCounterparty = t.counterparty ? counterparties.find(p => p.name === t.counterparty) : undefined
+  const beneficiary = existingCounterparty || nextCounterparty()
+  const party = { name: beneficiary.name, accountLast4: beneficiary.accountLast4, state: beneficiary.state, email: beneficiary.email }
   const date = t.effectiveDate || t.date, time = t.time || '10:42 AM'
   let description = t.description, merchant: string | undefined, merchantCategory: string | undefined
   let memo = t.memo, fee = t.fee ?? 0
   if (type === 'CARD_PURCHASE') { const [m, c] = merchants[index % merchants.length]; merchant = t.merchant || m; merchantCategory = t.merchantCategory || c; description = merchant }
-  if (type === 'ACH_CREDIT' && !t.description.toLowerCase().includes('treasury')) { description = t.description.toLowerCase().includes('income') ? 'ACH Credit — Payroll / Business Income' : 'ACH Credit — Business Operating Deposit'; memo ||= 'Operating income' }
+  if (type === 'ACH_CREDIT' && !t.description.toLowerCase().includes('treasury')) { description = t.description.toLowerCase().includes('income') ? `ACH Credit — ${beneficiary.name}` : 'ACH Credit — Business Operating Deposit'; memo ||= 'Operating income' }
   if (type === 'TRANSFER' || type === 'INTERNAL_TRANSFER') { description = debit ? `Transfer to ${party.name}` : `Transfer from ${party.name}`; memo ||= debit ? 'General transfer' : 'Incoming transfer' }
   if (type === 'ZELLE_OUT') description = `Zelle payment to ${party.name}`
-  if (type === 'WIRE_OUT') description = 'Domestic Wire Transfer'
+  if (type === 'WIRE_OUT') description = `Domestic Wire Transfer — ${party.name}`
   if (type === 'INTEREST_CREDIT') description = 'Savings Interest Credit'
   if (type === 'FEE') description = 'Monthly account service fee'
   return {
     ...t, reference: t.reference || makeReference(type, date, index), type, direction,
     sourceAccount: debit ? CHECKING : { name: 'External Funding Account', accountLast4: '••••' }, destinationAccount: debit ? party : CHECKING,
     counterparty: t.counterparty || party.name, counterpartyDetails: party,
-    institution: type.startsWith('WIRE') || type.startsWith('ACH') || type.startsWith('TRANSFER') ? institution : undefined,
+    institution: type.startsWith('WIRE') || type.startsWith('ACH') || type.startsWith('TRANSFER') ? (existingCounterparty?.institution || institution) : undefined,
     merchant, merchantCategory, initiatedAt: t.initiatedAt || `${date} ${time} ET`, effectiveDate: date,
     postedAt: t.status === 'Pending' ? undefined : `${date} ${time} ET`, memo, fee, description, category: t.category || type,
-    metadata: { rail: type, synthetic: true, ...(type === 'ZELLE_OUT' ? { recipientEnrollment: 'enrolled email' } : {}), ...(type === 'WIRE_OUT' ? { delivery: 'Same business day' } : {}) },
+    metadata: { rail: type, synthetic: true, counterpartyState: beneficiary.state, ...(type === 'ZELLE_OUT' ? { recipientEnrollment: 'enrolled email' } : {}), ...(type === 'WIRE_OUT' ? { delivery: 'Same business day' } : {}) },
   }
 }
 
@@ -67,10 +128,10 @@ function expandMonthlyActivity(seed: Transaction, seedIndex: number): Transactio
   }
   if (seed.id.startsWith('DEP-')) {
     const first = Number((seed.amount * 0.62).toFixed(2))
-    return [first, Number((seed.amount - first).toFixed(2))].map((amount, i) => enrichSingle({ ...seed, id: `${seed.id}-${i + 1}`, amount, description: i === 0 ? 'ACH Credit — Business Income' : 'ACH Credit — Operating Deposit', reference: '', counterparty: i === 0 ? 'Northstar Consulting LLC' : 'Meridian Operating LLC' }, seedIndex * 2 + i))
+    return [first, Number((seed.amount - first).toFixed(2))].map((amount, i) => enrichSingle({ ...seed, id: `${seed.id}-${i + 1}`, amount, description: i === 0 ? 'ACH Credit — Business Income' : 'ACH Credit — Operating Deposit', reference: '', counterparty: undefined }, seedIndex * 2 + i))
   }
   if (seed.id.startsWith('TRF-')) return [enrichSingle({ ...seed, reference: '', type: seedIndex % 3 === 0 ? 'WIRE_OUT' : 'TRANSFER' }, seedIndex)]
-  if (seed.id.startsWith('TOPUP-')) return [enrichSingle({ ...seed, reference: '', type: 'ACH_CREDIT', counterparty: 'Northstar Holdings Treasury' }, seedIndex)]
+  if (seed.id.startsWith('TOPUP-')) return [enrichSingle({ ...seed, reference: '', type: 'ACH_CREDIT', counterparty: undefined }, seedIndex)]
   return [enrichSingle(seed, seedIndex)]
 }
 
@@ -86,6 +147,7 @@ function withRunningBalances(transactions: Transaction[], openingBalance: number
 
 /** Builds the synthetic banking universe from the preserved seed ledger. */
 export function buildTransactionUniverse(seed: Transaction[], openingBalance = preservedSeed.account.openingBalance, targetBalance = preservedSeed.availableBalance): Transaction[] {
+  plannedPartyCursor = 0
   const expanded = seed.flatMap((t, i) => expandMonthlyActivity(t, i))
   const detailed = expanded.map((t, i) => {
     if (t.id === 'TX-20260906-005') return enrichSingle({ ...t, type: 'TRANSFER', memo: 'Property reserve', counterparty: 'Alex Smith' }, i)
@@ -95,7 +157,7 @@ export function buildTransactionUniverse(seed: Transaction[], openingBalance = p
   })
   const current: Transaction[] = [
     { id: 'ZL-20260908-4P7N2', kind: 'Transfer', type: 'ZELLE_OUT', status: 'Completed', amount: -1250, currency: 'USD', direction: 'DEBIT', description: 'Zelle payment to Maria Johnson', date: 'Sep 08, 2026', time: '11:16 AM', reference: 'ZL-260908-4P7N2', counterparty: 'Maria Johnson', counterpartyDetails: { name: 'Maria Johnson', email: 'maria.johnson@example.test' }, category: 'Zelle', memo: 'Reimbursement', fee: 0 },
-    { id: 'FXW-20260827-91KD7', kind: 'Transfer', type: 'WIRE_OUT', status: 'Completed', amount: -85000, currency: 'USD', direction: 'DEBIT', description: 'Domestic Wire Transfer', date: 'Aug 27, 2026', time: '01:12 PM', reference: 'FXW-260827-91KD7', counterparty: 'Northstar Holdings', counterpartyDetails: { name: 'Northstar Holdings', accountLast4: '8104' }, institution: { name: 'JPMorgan Chase Bank, N.A.', type: 'National bank' }, memo: 'Property acquisition', fee: 15, category: 'Domestic wire', metadata: { grossAmount: 85000, wireFee: 15, delivery: 'Same business day', synthetic: true } },
+    { id: 'FXW-20260827-91KD7', kind: 'Transfer', type: 'WIRE_OUT', status: 'Completed', amount: -85000, currency: 'USD', direction: 'DEBIT', description: 'Domestic Wire Transfer — Northstar Holdings', date: 'Aug 27, 2026', time: '01:12 PM', reference: 'FXW-260827-91KD7', counterparty: 'Northstar Holdings', counterpartyDetails: { name: 'Northstar Holdings', accountLast4: '8104' }, institution: { name: 'JPMorgan Chase Bank, N.A.', type: 'National bank' }, memo: 'Property acquisition', fee: 15, category: 'Domestic wire', metadata: { grossAmount: 85000, wireFee: 15, delivery: 'Same business day', synthetic: true } },
     { id: 'CARD-20260904-4821', kind: 'Card Purchase', type: 'CARD_PURCHASE', status: 'Completed', amount: -1249, currency: 'USD', direction: 'DEBIT', description: 'Apple Store', date: 'Sep 04, 2026', time: '03:42 PM', reference: 'CARD-260904-4821', merchant: 'Apple Store', merchantCategory: 'Electronics', counterparty: 'Apple Store', category: 'Electronics', fee: 0 },
   ]
   const all = [...detailed, ...current]
