@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabaseClient'
 import { customer as seed } from './data/mockData'
-import { buildTransactionUniverse } from './transactionEngine'
 import { CANONICAL_ACCOUNT, CANONICAL_BENEFICIARIES, CANONICAL_VAULTS, makeAccountName } from './data/canonicalBanking'
 import type { Transaction } from './types'
 
@@ -14,7 +13,6 @@ type CustomerData = {
 }
 
 const CustomerContext = createContext<CustomerData | null>(null)
-const universe = buildTransactionUniverse(seed.transactions)
 const caseNumber = (prefix: string, index: number) => `FX-${new Date().getFullYear()}-${prefix}${String(index).padStart(3, '0')}`
 
 function dbTransaction(t: Transaction, userId: string, accountId: string) {
@@ -76,25 +74,22 @@ async function ensureCustomer(userId: string) {
   }
   const existingVaults = await supabase.from('savings_vaults').select('*').eq('user_id', userId).order('created_at'); if (!existingVaults.data?.length) { const result = await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' }))); if (result.error) throw result.error }
   const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!beneficiaryCount) { const result = await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active' }))); if (result.error) throw result.error }
+
+  // mockData.ts is the canonical synthetic banking history. Supabase persists an exact customer-scoped copy.
   const { count: canonicalSeedCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('account_id', account!.id).eq('metadata->>seed_source', 'mockData-v1')
-  if ((canonicalSeedCount ?? 0) < universe.length) {
-    const cleaned = await supabase.rpc('replace_own_legacy_demo_seed', { p_account_id: account!.id })
+  if ((canonicalSeedCount ?? 0) !== seed.transactions.length) {
+    const cleaned = await supabase.rpc('replace_own_mockdata_seed', { p_account_id: account!.id })
     if (cleaned.error) throw cleaned.error
-    const existingTransactions = await supabase.from('transactions').select('reference').eq('user_id', userId).eq('account_id', account!.id)
-    const existingReferences = new Set((existingTransactions.data ?? []).map(row => row.reference))
-    const missing = universe.filter(t => !existingReferences.has(`${t.reference}-${userId.slice(0, 8)}`))
-    if (missing.length) {
-      for (let i = 0; i < missing.length; i += 100) {
-        const result = await supabase.from('transactions').insert(missing.slice(i, i + 100).map(t => dbTransaction(t, userId, account!.id)))
-        if (result.error) throw result.error
-      }
+    const exactRows = seed.transactions.map(t => dbTransaction(t, userId, account!.id))
+    for (let i = 0; i < exactRows.length; i += 100) {
+      const result = await supabase.from('transactions').insert(exactRows.slice(i, i + 100))
+      if (result.error) throw result.error
     }
-    if ((canonicalSeedCount ?? 0) === 0) {
-      const restored = await supabase.rpc('restore_canonical_account', { p_account_id: account!.id })
-      if (restored.error) throw restored.error
-      account = restored.data
-    }
+    const restored = await supabase.rpc('restore_canonical_account', { p_account_id: account!.id })
+    if (restored.error) throw restored.error
+    account = restored.data
   }
+
   const { count: notificationCount } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!notificationCount) { const result = await supabase.from('notifications').insert([{ user_id: userId, title: 'Transfer alert', body: 'A savings transfer is pending authorization.', notification_type: 'transaction' }, { user_id: userId, title: 'Security alert', body: 'Your recommended security controls are active.', notification_type: 'security' }]); if (result.error) throw result.error }
   const { data: security } = await supabase.from('security_preferences').select('user_id').eq('user_id', userId).maybeSingle(); if (!security) { const result = await supabase.from('security_preferences').insert({ user_id: userId, two_fa: true, passkey: false, alerts: true }); if (result.error) throw result.error }
   const { data: card } = await supabase.from('card_controls').select('id').eq('user_id', userId).eq('account_id', account!.id).maybeSingle(); if (!card) { const result = await supabase.from('card_controls').insert({ user_id: userId, account_id: account!.id, last4: account!.account_number ? String(account!.account_number).slice(-4) : CANONICAL_ACCOUNT.last4 }); if (result.error) throw result.error }
