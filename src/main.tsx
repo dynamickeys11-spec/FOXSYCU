@@ -6,6 +6,8 @@ import { MFAChallenge } from './MFAChallenge'
 import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import CanonicalLedgerApp from './CanonicalLedgerApp'
+import { TransferCenterV3 } from './TransferCenterV3'
+import { CardsCenterV5 } from './CardsCenterV5'
 import AdminPage from './AdminPage'
 import ProfilePage from './ProfilePage'
 import './styles.css'
@@ -54,12 +56,15 @@ function Loading() {
 
 function ProtectedCustomerApp() {
   const { session, loading } = useCustomerData()
+  const location = useLocation()
   useSessionBoundary()
   const gate = useMfaGate(session)
   if (loading) return <Loading />
   if (!session) return <AuthPage />
   if (!gate.ready) return <Loading />
   if (gate.needs) return <MFAChallenge onVerified={() => gate.setNeeds(false)} />
+  if (location.pathname === '/transfers') return <TransferCenterV3 />
+  if (location.pathname === '/cards') return <CardsCenterV5 />
   return <CanonicalLedgerApp />
 }
 
