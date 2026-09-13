@@ -22,10 +22,53 @@ function dbTransaction(t: Transaction, userId: string, accountId: string) {
 }
 
 async function ensureCustomer(userId: string) {
-  const { data: authData } = await supabase.auth.getUser(); const meta = authData.user?.user_metadata ?? {}; const existingProfile = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle()
-  if (!existingProfile.data) { const fullName = String(meta.full_name || meta.name || authData.user?.email?.split('@')[0] || 'Customer').trim(); await supabase.from('profiles').upsert({ id: userId, full_name: fullName, preferred_name: meta.preferred_name || null, phone: meta.phone || null, date_of_birth: meta.date_of_birth || null, address_line1: meta.address_line1 || null, city: meta.city || null, state_region: meta.state_region || null, postal_code: meta.postal_code || null, country: meta.country || 'United States', occupation: meta.occupation || null, employment_status: meta.employment_status || null, tier: 'Customer', currency: 'USD', customer_since: new Date().toISOString().slice(0, 10), profile_completed: Boolean(fullName && meta.address_line1 && meta.city) }); await supabase.from('audit_logs').insert({ user_id: userId, action: 'customer_profile_created', resource_type: 'profile', resource_id: userId, metadata: { synthetic: true } }) }
-  const { data: profile } = await supabase.from('profiles').select('full_name, preferred_name').eq('id', userId).maybeSingle()
-  const ownerName = String(profile?.preferred_name || profile?.full_name || meta.preferred_name || meta.full_name || meta.name || authData.user?.email?.split('@')[0] || 'Customer').trim()
+  const { data: authData } = await supabase.auth.getUser()
+  const user = authData.user
+  const meta = user?.user_metadata ?? {}
+  const profilePayload = {
+    full_name: String(meta.full_name || meta.name || user?.email?.split('@')[0] || 'Customer').trim(),
+    preferred_name: meta.preferred_name || null,
+    phone: meta.phone || null,
+    date_of_birth: meta.date_of_birth || null,
+    address_line1: meta.address_line1 || null,
+    city: meta.city || null,
+    state_region: meta.state_region || null,
+    postal_code: meta.postal_code || null,
+    country: meta.country || 'United States',
+    occupation: meta.occupation || null,
+    employment_status: meta.employment_status || null,
+  }
+  const existingProfile = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+  if (existingProfile.error) throw existingProfile.error
+  if (!existingProfile.data) {
+    const created = await supabase.from('profiles').upsert({
+      id: userId,
+      ...profilePayload,
+      tier: 'Customer',
+      currency: 'USD',
+      customer_since: new Date().toISOString().slice(0, 10),
+      profile_completed: Boolean(profilePayload.full_name && profilePayload.address_line1 && profilePayload.city)
+    }, { onConflict: 'id' }).select('*').single()
+    if (created.error) throw created.error
+    await supabase.from('audit_logs').insert({ user_id: userId, action: 'customer_profile_created', resource_type: 'profile', resource_id: userId, metadata: { synthetic: true } })
+  } else {
+    const current = existingProfile.data
+    const merge: Record<string, any> = { id: userId }
+    const keys = ['full_name','preferred_name','phone','date_of_birth','address_line1','city','state_region','postal_code','country','occupation','employment_status'] as const
+    for (const key of keys) {
+      const currentValue = current[key]
+      const incomingValue = profilePayload[key]
+      if ((currentValue === null || currentValue === undefined || String(currentValue).trim() === '') && incomingValue !== null && incomingValue !== undefined && String(incomingValue).trim() !== '') {
+        merge[key] = incomingValue
+      }
+    }
+    if (Object.keys(merge).length > 1) {
+      const merged = await supabase.from('profiles').upsert(merge, { onConflict: 'id' }).select('*').single()
+      if (merged.error) throw merged.error
+    }
+  }
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+  const ownerName = String(profile?.preferred_name || profile?.full_name || profilePayload.preferred_name || profilePayload.full_name || user?.email?.split('@')[0] || 'Customer').trim()
   const accountName = makeAccountName(ownerName)
   let { data: account } = await supabase.from('accounts').select('*').eq('user_id', userId).eq('account_type', 'checking').maybeSingle()
   if (!account) { const created = await supabase.from('accounts').insert({ user_id: userId, account_type: CANONICAL_ACCOUNT.accountType, account_name: accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: CANONICAL_ACCOUNT.last4, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).select('*').single(); if (created.error) throw created.error; account = created.data }
