@@ -25,7 +25,7 @@ const parts = (now: string) => { const d = new Date(now); return { date: d.toLoc
 
 const normalizeStatus = (status?: string): Transaction['status'] => {
   const value = String(status || '').toLowerCase()
-  if (value === 'pending') return 'Pending'
+  if (value === 'pending' || value === 'processing') return 'Pending'
   if (value === 'failed') return 'Failed'
   if (value === 'reversed') return 'Reversed'
   return 'Completed'
@@ -42,10 +42,10 @@ const normalizeKind = (row: SnapshotRow): Transaction['kind'] => {
   return 'Transfer'
 }
 
-const hydrateRows = (rows: SnapshotRow[], seed: AccountLedger): AccountLedger => {
-  const entries: LedgerEntry[] = rows.map(row => {
+const hydrateRows = (rows: SnapshotRow[], seed: AccountLedger, existing: LedgerEntry[] = []): AccountLedger => {
+  const serverEntries: LedgerEntry[] = rows.map(row => {
     const rawDirection = String(row.direction || row.entryType || '').toLowerCase()
-    const debit = rawDirection === 'debit' || rawDirection === 'debit'.toLowerCase() || Number(row.amount) < 0
+    const debit = rawDirection === 'debit' || Number(row.amount) < 0
     const amount = Math.abs(Number(row.amount || 0))
     const createdAt = row.createdAt || row.postedAt || row.initiatedAt || new Date(`${row.date || new Date().toISOString().slice(0,10)}T${row.time || '00:00:00'}`).toISOString()
     return makeEntry({
@@ -75,7 +75,11 @@ const hydrateRows = (rows: SnapshotRow[], seed: AccountLedger): AccountLedger =>
       createdAt,
     })
   }).filter(entry => Number.isFinite(entry.amount) && entry.reference)
-  return { ...seed, entries }
+
+  const serverIds = new Set(serverEntries.map(entry => entry.id))
+  const serverRefs = new Set(serverEntries.map(entry => entry.reference))
+  const optimisticEntries = existing.filter(entry => !serverIds.has(entry.id) && !serverRefs.has(entry.reference) && entry.metadata?.source === 'supabase-money-movement')
+  return { ...seed, entries: [...optimisticEntries, ...serverEntries] }
 }
 
 export function createRuntimeTransactionEngine(seed: AccountLedger) {
@@ -101,14 +105,18 @@ export function createRuntimeTransactionEngine(seed: AccountLedger) {
     getAvailableBalance: () => availableBalance(state),
     hasLocalRuntimeState: () => hasLocalRuntimeState,
     hydrateFromSnapshot: () => {
-      if (hasLocalRuntimeState || typeof window === 'undefined') return false
+      if (typeof window === 'undefined') return false
       try {
         const raw = window.localStorage.getItem(DB_SNAPSHOT_KEY)
         if (!raw) return false
         const rows = JSON.parse(raw) as SnapshotRow[]
         if (!Array.isArray(rows) || rows.length === 0) return false
-        state = hydrateRows(rows, seed)
-        return true
+        const next = hydrateRows(rows, seed, state.entries)
+        const changed = JSON.stringify(next.entries) !== JSON.stringify(state.entries)
+        state = next
+        save(state)
+        hasLocalRuntimeState = true
+        return changed
       } catch { return false }
     },
     deposit,
