@@ -31,7 +31,7 @@ export default function ExternalAccountsCenter() {
     try {
       await saveVerifiedExternalAccount({ routingNumber, accountNumber, accountHolderName: accountName, accountType })
       await refresh()
-      setNotice('External account added. This is synthetic format validation; no live ownership check was performed.')
+      setNotice('External account added. Account details were format-checked; ownership verification is not connected.')
       setRoutingNumber(''); setAccountNumber(''); setAccountName('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unable to add external account.')
@@ -61,7 +61,7 @@ export default function ExternalAccountsCenter() {
         <div className="financial-card-head"><div><h2>Linked U.S. accounts</h2><p>{externalAccounts.length} active account{externalAccounts.length === 1 ? '' : 's'} connected</p></div><ShieldCheck size={20}/></div>
         {externalAccounts.length ? <div className="financial-list">{externalAccounts.map(account => <div className="financial-list-row" key={account.id}>
           <span className="financial-icon"><ShieldCheck size={16}/></span><div><b>{account.institution_name || 'U.S. bank account'}</b><small>{account.account_type} · {mask(String(account.account_number_last4 || ''))}{account.account_name ? ` · ${account.account_name}` : ''}</small></div><span className="status-pill"><CheckCircle2 size={13}/> {account.verification_status}</span><button className="icon-button" title="Remove account" aria-label="Remove account" disabled={removingId === account.id} onClick={() => void removeAccount(account.id)}>{removingId === account.id ? '…' : <Trash2 size={15}/>}</button>
-        </div>)}</div> : <div className="empty-state"><ShieldCheck size={24}/><b>No external accounts yet</b><p>Add a U.S. routing number, account number and account-holder name to create a synthetic linked account.</p></div>}
+        </div>)}</div> : <div className="empty-state"><ShieldCheck size={24}/><b>No external accounts yet</b><p>Add a U.S. routing number, account number and account-holder name to create a linked account.</p></div>}
       </article>
     </section>
 
@@ -75,8 +75,8 @@ export default function ExternalAccountsCenter() {
         <label>Account number<input inputMode="numeric" maxLength={17} value={accountNumber} onChange={e => setAccountNumber(e.target.value.replace(/\D/g, ''))} placeholder="4–17 digits"/></label>
         <label>Account holder name<input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="Name on account"/></label>
         <label>Account type<select value={accountType} onChange={e => setAccountType(e.target.value as 'checking' | 'savings')}><option value="checking">Checking</option><option value="savings">Savings</option></select></label>
-        <div className="available-note"><ShieldCheck size={15}/><span>U.S. ABA and account-number format checks only. No live ownership verification is performed.</span></div>
-        <div className="review-actions"><button className="button secondary" onClick={reset}>Cancel</button><button className="button primary" disabled={saving} onClick={submit}>{saving ? 'Verifying…' : 'Verify & add'}</button></div>
+        <div className="available-note"><ShieldCheck size={15}/><span>Routing and account-number formats are checked here. Live account ownership verification is not connected.</span></div>
+        <div className="review-actions"><button className="button secondary" onClick={reset}>Cancel</button><button className="button primary" disabled={saving} onClick={submit}>{saving ? 'Checking…' : 'Review & add'}</button></div>
       </div>
     </aside></div>}
   </main>
