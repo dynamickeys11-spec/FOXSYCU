@@ -1,6 +1,7 @@
 import type { Transaction, TransactionType } from './types'
+import { customer as preservedSeed } from './data/mockData'
 
-const CHECKING = { name: 'Checking Account', accountLast4: '4821' }
+const CHECKING = { name: 'Checking Account', accountLast4: preservedSeed.account.last4 }
 const institutions = [
   { name: 'JPMorgan Chase Bank, N.A.', type: 'National bank' }, { name: 'Bank of America, N.A.', type: 'National bank' },
   { name: 'Wells Fargo Bank, N.A.', type: 'National bank' }, { name: 'Citibank, N.A.', type: 'National bank' },
@@ -84,7 +85,7 @@ function withRunningBalances(transactions: Transaction[], openingBalance: number
 }
 
 /** Builds the synthetic banking universe from the preserved seed ledger. */
-export function buildTransactionUniverse(seed: Transaction[], openingBalance = 2_679_325, targetBalance = 5_000_000): Transaction[] {
+export function buildTransactionUniverse(seed: Transaction[], openingBalance = preservedSeed.account.openingBalance, targetBalance = preservedSeed.availableBalance): Transaction[] {
   const expanded = seed.flatMap((t, i) => expandMonthlyActivity(t, i))
   const detailed = expanded.map((t, i) => {
     if (t.id === 'TX-20260906-005') return enrichSingle({ ...t, type: 'TRANSFER', memo: 'Property reserve', counterparty: 'Alex Smith' }, i)
@@ -104,7 +105,7 @@ export function buildTransactionUniverse(seed: Transaction[], openingBalance = 2
   return withRunningBalances(all, openingBalance)
 }
 
-export function calculateBalances(transactions: Transaction[], openingBalance = 2_679_325) {
+export function calculateBalances(transactions: Transaction[], openingBalance = preservedSeed.account.openingBalance) {
   const posted = openingBalance + transactions.filter(t => t.status === 'Completed').reduce((sum, t) => sum + ledgerImpact(t), 0)
   const pendingDebits = transactions.filter(t => t.status === 'Pending' && t.amount < 0).reduce((sum, t) => sum + Math.abs(t.amount) + (t.fee || 0), 0)
   const pendingCredits = transactions.filter(t => t.status === 'Pending' && t.amount > 0).reduce((sum, t) => sum + t.amount - (t.fee || 0), 0)
