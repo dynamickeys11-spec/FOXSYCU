@@ -6,56 +6,17 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: write
-
 jobs:
-  fix-and-build:
-    if: github.actor != 'github-actions[bot]'
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Apply safe transaction and avatar fixes
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          app=Path('src/CanonicalLedgerApp.tsx'); s=app.read_text()
-          s=s.replace("import { useMemo, useState } from 'react'", "import { useMemo, useRef, useState } from 'react'")
-          old="const tx=(row:any):Transaction=>({...row,amount:row.direction==='debit'?-Math.abs(Number(row.amount)):Number(row.amount),status:row.status==='completed'?'Completed':row.status==='pending'?'Pending':row.status==='failed'?'Failed':'Reversed'}) as Transaction"
-          new="const normalizeStatus=(value:any)=>{const s=String(value??'').trim().toLowerCase();if(['completed','complete','posted','settled','processed'].includes(s))return 'Completed';if(s==='pending')return 'Pending';if(s==='failed')return 'Failed';if(['reversed','reversal'].includes(s))return 'Reversed';return 'Review'}; const tx=(row:any):Transaction=>({...row,amount:row.direction==='debit'?-Math.abs(Number(row.amount)):Number(row.amount),status:normalizeStatus(row.status)}) as Transaction"
-          if old in s: s=s.replace(old,new)
-          s=s.replace('<span className="avatar">{initials(name)}</span>', '<span className="avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="" style={{width:\'100%\',height:\'100%\',objectFit:\'cover\',borderRadius:\'inherit\'}}/> : initials(name)}</span>')
-          start=s.find('function Profile(){'); end=s.find('export default function CanonicalLedgerApp()',start)
-          if start!=-1 and end!=-1:
-            profile='''function Profile(){const{profile,refresh}=useCustomerData();const name=profile?.preferred_name||profile?.full_name||'Customer';const input=useRef<HTMLInputElement|null>(null);const[busy,setBusy]=useState(false);const[error,setError]=useState('');const choose=()=>{setError('');input.current?.click()};const upload=async(file:File)=>{setError('');if(!file.type.startsWith('image/')){setError('Please choose an image file.');return}if(file.size>5*1024*1024){setError('Image must be 5 MB or smaller.');return}const uid=(await supabase.auth.getUser()).data.user?.id;if(!uid){setError('Your session has expired. Please sign in again.');return}setBusy(true);try{const ext=(file.name.split('.').pop()||file.type.split('/')[1]||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');const path=`${uid}/avatar.${ext}`;const{error:uploadError}=await supabase.storage.from('avatars').upload(path,file,{upsert:true,contentType:file.type,cacheControl:'3600'});if(uploadError)throw uploadError;const{data}=supabase.storage.from('avatars').getPublicUrl(path);const{error:updateError}=await supabase.from('profiles').update({avatar_url:data.publicUrl}).eq('id',uid);if(updateError)throw updateError;await refresh()}catch(e:any){setError(e?.message||'Unable to upload photo.')}finally{setBusy(false)}};const remove=async()=>{const uid=(await supabase.auth.getUser()).data.user?.id;if(!uid||!profile?.avatar_url)return;setBusy(true);setError('');try{const path=profile.avatar_url.split('/avatars/')[1];if(path)await supabase.storage.from('avatars').remove([decodeURIComponent(path.split('?')[0])]);const{error}=await supabase.from('profiles').update({avatar_url:null}).eq('id',uid);if(error)throw error;await refresh()}catch(e:any){setError(e?.message||'Unable to remove photo.')}finally{setBusy(false)}};return <><Head eyebrow="PROFILE" title={name} description={`${profile?.tier||'Customer'} · Customer since ${profile?.customer_since?date(profile.customer_since):'—'}.`}/><Panel title="Profile overview"><div className="profile-card"><button type="button" className="profile-avatar" onClick={choose} disabled={busy} aria-label="Change profile photo">{profile?.avatar_url?<img src={profile.avatar_url} alt="Profile" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'inherit'}}/>:initials(name)}</button><div><h2>{name}</h2><p>{profile?.tier||'Customer'} · {profile?.currency||'USD'}</p><div style={{display:'flex',gap:8,marginTop:10,flexWrap:'wrap'}}><button className="button secondary" type="button" onClick={choose} disabled={busy}>{busy?'Uploading…':'Change photo'}</button>{profile?.avatar_url&&<button className="button secondary" type="button" onClick={()=>void remove()} disabled={busy}>Remove photo</button>}</div>{error&&<small style={{display:'block',marginTop:8,color:'crimson'}}>{error}</small>}</div><input ref={input} type="file" accept="image/*" hidden onChange={e=>{const f=e.target.files?.[0];if(f)void upload(f);e.currentTarget.value=''}}/></div></Panel></>}\n'''
-            s=s[:start]+profile+s[end:]
-          app.write_text(s)
-          provider=Path('src/CustomerProvider.tsx'); p=provider.read_text()
-          oldp="function toTransaction(row: any): Transaction { return { id: row.id, reference: row.reference, type: row.transaction_type, status: row.status === 'completed' ? 'Completed' : row.status === 'pending' ? 'Pending' : row.status === 'failed' ? 'Failed' : 'Reversed',"
-          newp="function normalizeTransactionStatus(value: any): Transaction['status'] { const s=String(value??'').trim().toLowerCase(); if(['completed','complete','posted','settled','processed'].includes(s)) return 'Completed'; if(s==='pending') return 'Pending'; if(s==='failed') return 'Failed'; if(['reversed','reversal'].includes(s)) return 'Reversed'; return 'Review' as Transaction['status'] }\nfunction toTransaction(row: any): Transaction { return { id: row.id, reference: row.reference, type: row.transaction_type, status: normalizeTransactionStatus(row.status),"
-          if oldp in p:p=p.replace(oldp,newp)
-          provider.write_text(p)
-          PY
       - name: Install dependencies
         run: npm install
       - name: Build
         run: npm run build
-      - name: Commit source fixes
-        if: github.event_name == 'push'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/CanonicalLedgerApp.tsx src/CustomerProvider.tsx
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'fix: transaction statuses and profile avatar upload'
-          git push
