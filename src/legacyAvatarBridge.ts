@@ -90,7 +90,8 @@ function showMessageDetail(row: any) {
   addDetail(details, 'Type', String(row.kind || row.type || 'Account activity'))
   addDetail(details, 'Counterparty', String(row.counterparty || row.merchant || '—'))
   addDetail(details, 'Category', String(row.category || row.merchantCategory || '—'))
-  addDetail(details, 'Account', String(row.accountId || 'Private Checking'))
+  if (row.accountName || row.account_name) addDetail(details, 'Account', String(row.accountName || row.account_name))
+  if (row.accountId) addDetail(details, 'Account ID', String(row.accountId))
   if (row.availableBalanceAfter != null) addDetail(details, 'Balance after', money(Number(row.availableBalanceAfter)))
 
   const actions = document.createElement('div')
@@ -190,7 +191,7 @@ function applyLegacyActivityBridge() {
       if (!text.nodeValue) continue
       const original = text.nodeValue
       let value = original
-      if (latestCredit) value = value.replace('$98,500.00', money(Number(latestCredit.amount))).replace('was posted to Private Checking.', `${String(latestCredit.description || latestCredit.merchant_name || 'Account credit')} was posted to Private Checking.`)
+      if (latestCredit) value = value.replace('$98,500.00', money(Number(latestCredit.amount))).replace('was posted to Private Checking.', `${String(latestCredit.description || latestCredit.merchant_name || 'Account credit')} was posted to the account.`)
       if (latestPending) value = value.replace('$12,000.00', money(Number(latestPending.amount))).replace('to Alex Smith', `to ${String(latestPending.counterparty || latestPending.counterparty_name || 'beneficiary')}`)
       if (value !== original) text.nodeValue = value
     }
