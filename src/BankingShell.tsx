@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react'
 import { Activity, Bell, CreditCard, Home, Menu, MoveRight, PiggyBank, Search, Settings, ShieldCheck, Users, Wallet, X, Mail, UserRound } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
+import { FNCUWordmark } from './FNCUBrand'
 import './world-v2.css'
 import './ux-audit.css'
+import './fncu-identity.css'
 
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const nav=[['Overview','/',Home],['Accounts','/accounts',Wallet],['Money movement','/transfers',MoveRight],['Beneficiaries','/beneficiaries',Users],['Transactions','/transactions',Activity],['Messages','/messages',Mail],['Savings','/savings',PiggyBank],['Cards','/cards',CreditCard],['Security Center','/security',ShieldCheck],['Settings','/settings',Settings],['Profile','/profile',UserRound]] as const
@@ -15,7 +17,7 @@ export function BankingShell({children}:{children:React.ReactNode}){
   const Avatar=({kind}:{kind:'customer'|'header'})=>avatarUrl?<img className={kind==='customer'?'customer-avatar-image':'header-avatar-image'} src={avatarUrl} alt="" aria-hidden="true"/>:<span>{initials}</span>
   return <div className="app-shell">
     <aside className={open?'sidebar open':'sidebar'}>
-      <div className="sidebar-head"><div className="brand"><div className="brand-mark">F</div><div><b>FNCU</b><small>FIRST NATIONAL CREDIT UNION</small></div></div><button className="icon-button mobile-only" onClick={()=>setOpen(false)}><X size={18}/></button></div>
+      <div className="sidebar-head"><div className="brand"><FNCUWordmark compact/><span className="fncu-demo-label" style={{display:'none'}}>DEMO</span></div><button className="icon-button mobile-only" onClick={()=>setOpen(false)}><X size={18}/></button></div>
       <button className="account-switch" onClick={()=>{setOpen(false);navigate('/profile')}}><span className="avatar"><Avatar kind="customer"/></span><span className="account-switch-copy"><b>{name}</b><small>{account?.account_type||'checking'} · {account?.currency||'USD'}</small></span></button>
       <nav>{nav.map(([label,path,Icon])=><NavLink key={path} to={path} end={path==='/' } onClick={()=>setOpen(false)} className={({isActive})=>`nav-link ${isActive?'active':''}`}><Icon size={17}/><span>{label}</span></NavLink>)}</nav>
       <div className="sidebar-bottom"><NavLink to="/security" onClick={()=>setOpen(false)} className="security-mini"><ShieldCheck size={16}/><span><b>Security center</b><small>Account protection</small></span></NavLink><button className="signout" onClick={()=>void import('./supabaseClient').then(({supabase})=>supabase.auth.signOut())}>Sign out</button></div>
