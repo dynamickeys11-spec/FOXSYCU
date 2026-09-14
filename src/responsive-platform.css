@@ -1,0 +1,120 @@
+/* FOXSYCU cross-platform layout hardening.
+   Keeps the banking UI inside the viewport from small Android phones through wide desktops. */
+html{width:100%;overflow-x:hidden}
+body,#root{width:100%;max-width:100%;overflow-x:hidden}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+button,input,select,textarea{max-width:100%}
+
+/* Canonical customer shell */
+.app-shell{width:100%;min-width:0;overflow-x:clip}
+.main-area{min-width:0;max-width:100%}
+.content{min-width:0;width:100%;max-width:1540px}
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
+.topbar{min-width:0}
+.topbar-actions{min-width:0;max-width:65%}
+.global-search{min-width:0}
+.profile-link{min-width:0;max-width:220px}
+.profile-link>span:last-child{min-width:0}
+.profile-link b,.profile-link small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Prevent grid/flex children from forcing horizontal scroll. */
+.hero-grid,.dashboard-grid,.lower-grid,.account-grid,.savings-overview,.vault-grid,.two-column,.transfer-grid,.card-layout,.stat-grid,.account-metrics{min-width:0}
+.hero-grid>*,.dashboard-grid>*,.lower-grid>*,.account-grid>*,.savings-overview>*,.vault-grid>*,.two-column>*,.transfer-grid>*,.card-layout>*,.stat-grid>*,.account-metrics>*{min-width:0}
+.panel,.bank-card,.metric-card,.balance-card,.account-hero,.account-banner,.receipt,.confirm,.transaction-drawer{min-width:0;max-width:100%}
+
+/* Medium laptops/tablets: give content more usable width. */
+@media (max-width:1200px){
+  .sidebar{width:240px}
+  .main-area{margin-left:240px;width:calc(100% - 240px)}
+  .topbar{padding-left:24px;padding-right:24px}
+  .content{padding-left:28px;padding-right:28px}
+  .topbar-actions{max-width:62%}
+  .global-search{width:min(300px,34vw)}
+  .hero-grid{grid-template-columns:1.35fr .9fr}
+}
+
+/* Tablet / narrow landscape. */
+@media (max-width:900px){
+  .sidebar{width:280px;transform:translateX(-105%);transition:transform .2s ease;box-shadow:16px 0 42px rgba(16,24,40,.18)}
+  .sidebar.open{transform:translateX(0)}
+  .main-area{margin-left:0;width:100%}
+  .topbar{padding:0 18px}
+  .topbar-title{min-width:0}
+  .topbar-title>div{min-width:0}
+  .topbar-title b,.topbar-title small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar-actions{max-width:58%;gap:6px}
+  .profile-link>span:last-child{display:none}
+  .global-search{width:38px;border-color:transparent;padding:0}
+  .global-search input{display:none}
+  .content{padding:26px 22px 88px}
+  .hero-grid,.dashboard-grid,.lower-grid,.account-grid,.card-layout,.transfer-grid{grid-template-columns:1fr}
+  .savings-overview{grid-template-columns:1fr 1fr}
+  .savings-overview article:first-child{grid-column:1/-1}
+  .vault-grid,.stat-grid{grid-template-columns:1fr 1fr}
+  .mobile-nav{display:flex}
+}
+
+/* Phones. */
+@media (max-width:640px){
+  .sidebar{width:min(88vw,320px)}
+  .topbar{height:60px;padding:0 12px}
+  .topbar-title{gap:6px}
+  .topbar-title small{font-size:7px}
+  .topbar-title b{font-size:12px}
+  .topbar-actions{max-width:none;gap:4px}
+  .topbar-actions>.profile-link{display:flex}
+  .icon-button{width:36px;height:36px}
+  .content{padding:20px 14px calc(88px + env(safe-area-inset-bottom))}
+  .page-head{gap:14px;margin-bottom:18px}
+  .page-head h1{font-size:25px}
+  .head-actions{width:100%;flex-wrap:wrap}
+  .head-actions>*{flex:1 1 140px;min-width:0}
+  .hero-grid,.dashboard-grid,.lower-grid,.account-grid,.savings-overview,.vault-grid,.stat-grid,.two-column,.transfer-grid,.card-layout,.account-metrics{grid-template-columns:1fr}
+  .savings-overview article:first-child{grid-column:auto}
+  .balance-card{min-height:0;padding:21px}
+  .balance{font-size:clamp(32px,10vw,42px);word-break:break-word}
+  .balance-meta{flex-wrap:wrap;gap:8px 14px}
+  .balance-actions{flex-wrap:wrap}
+  .balance-actions a{flex:1 1 120px;justify-content:center;min-height:40px}
+  .account-hero{display:block;padding:21px}
+  .account-number{text-align:left;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+  .detail-grid{grid-template-columns:1fr}
+  .panel,.bank-card{padding:17px}
+  .panel-head,.card-title{gap:12px;flex-wrap:wrap}
+  .transaction-toolbar{flex-direction:column}
+  .transaction-toolbar>div{max-width:none;width:100%}
+  .transaction-copy b,.transaction-copy small,.tx-main b,.tx-main small{max-width:100%}
+  .transaction-row{grid-template-columns:30px minmax(0,1fr) auto}
+  .transaction-value{min-width:0}
+  .transaction-value strong{white-space:nowrap}
+  .receipt{margin:12px 0;padding:22px 16px}
+  .receipt>strong{font-size:32px;word-break:break-word}
+  .receipt-actions{flex-direction:column}
+  .receipt-actions>*{width:100%}
+  .transaction-drawer{width:100%;padding:22px 16px}
+  .modal,.drawer-back{padding:0}
+  .confirm{width:100%;max-width:none;border-radius:16px 16px 0 0;padding:22px 16px calc(22px + env(safe-area-inset-bottom))}
+  .modal-actions{grid-template-columns:1fr}
+  .rail-tabs{margin-inline:-17px;padding-inline:17px}
+  .mobile-nav{padding-bottom:env(safe-area-inset-bottom);min-height:62px}
+}
+
+/* Very small phones / accessibility zoom. */
+@media (max-width:380px){
+  .content{padding-left:11px;padding-right:11px}
+  .topbar-title{max-width:44vw}
+  .balance-actions a{flex-basis:100%}
+  .page-head h1{font-size:23px}
+  .panel,.bank-card{padding:15px}
+}
+
+@media (orientation:landscape) and (max-height:520px){
+  .topbar{height:56px}
+  .content{padding-top:16px;padding-bottom:72px}
+  .mobile-nav{min-height:54px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .sidebar{transition:none}
+}
