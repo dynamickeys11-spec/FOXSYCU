@@ -5,8 +5,9 @@ const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
-    // FOXSYCU is intentionally session-only: closing/reloading the site must require authentication again.
-    persistSession: false,
+    // Customer sessions must survive deliberate browser/app refreshes. Supabase stores
+    // and refreshes the session locally; explicit sign-out still clears it.
+    persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
     experimental: { passkey: true },
