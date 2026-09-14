@@ -37,9 +37,9 @@ export default function ProfilePage(){
   const save=async(e:FormEvent)=>{e.preventDefault();if(!session?.user)return;setBusy(true);setMessage('');try{
     const fullName=form.full_name?.trim();
     if(!fullName) throw new Error('Legal full name is required.');
-    const payload={id:session.user.id, full_name:fullName, preferred_name:form.preferred_name?.trim()||null, phone:form.phone?.trim()||null, date_of_birth:form.date_of_birth?.trim()||null, address_line1:form.address_line1?.trim()||null, city:form.city?.trim()||null, state_region:form.state_region?.trim()||null, postal_code:form.postal_code?.trim()||null, country:form.country?.trim()||null, occupation:form.occupation?.trim()||null, employment_status:form.employment_status?.trim()||null, timezone:form.timezone?.trim()||null, profile_completed:Boolean(fullName&&form.address_line1?.trim()&&form.city?.trim())}
-    const {data,error}=await supabase.from('profiles').upsert(payload,{onConflict:'id'}).select('*').single();
-    if(error)throw error;
+    const payload={full_name:fullName, preferred_name:form.preferred_name?.trim()||null, phone:form.phone?.trim()||null, date_of_birth:form.date_of_birth?.trim()||null, address_line1:form.address_line1?.trim()||null, city:form.city?.trim()||null, state_region:form.state_region?.trim()||null, postal_code:form.postal_code?.trim()||null, country:form.country?.trim()||null, occupation:form.occupation?.trim()||null, employment_status:form.employment_status?.trim()||null, timezone:form.timezone?.trim()||null, profile_completed:Boolean(fullName&&form.address_line1?.trim()&&form.city?.trim())}
+    const {data,error}=await supabase.from('profiles').update(payload).eq('id',session.user.id).select('*').single();
+    if(error)throw new Error(`Unable to save your profile: ${error.message}`);
     if(!data)throw new Error('No customer profile was saved.');
     await refresh();
     setForm(v=>({...v,...Object.fromEntries(fields.map(k=>[k,String(data[k]??'')]))}));
