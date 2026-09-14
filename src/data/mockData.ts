@@ -20,7 +20,7 @@ function buildSyntheticLedger(): AccountLedger {
       const baseCredit = 42_000 + (monthIndex % 6) * 8_500 + (monthIndex % 4) * 1_250
       const debit = 18_000 + (monthIndex % 5) * 4_200 + (monthIndex % 3) * 900
       const isCardMonth = cardMonths.has(monthIndex)
-      const credit = isCardMonth ? baseCredit + debit - 2_000 : baseCredit
+      const credit = isCardMonth ? baseCredit - debit + 2_000 : baseCredit
       const effectiveDebit = isCardMonth ? 2_000 : debit
       entries.push(makeEntry({ id: `TX-${String(1000 + entries.length + 1)}`, accountId: ACCOUNT_ID, entryType: 'credit', kind: monthIndex % 4 === 0 ? 'Deposit' : 'Transfer', category: monthIndex % 4 === 0 ? 'Income' : 'Client settlement', description: monthIndex % 4 === 0 ? 'Business proceeds received' : 'Client settlement received', counterparty: monthIndex % 4 === 0 ? 'External funding source' : 'Client settlement', memo: 'Synthetic historical activity', date: displayDate(base), time: '09:15 AM', amount: credit, currency: 'USD', status: 'Completed', reference: `CR-${year}${String(month).padStart(2, '0')}-${String(monthIndex + 1).padStart(4, '0')}`, createdAt: base }))
       const debitDate = isoDate(year, month, 6)
