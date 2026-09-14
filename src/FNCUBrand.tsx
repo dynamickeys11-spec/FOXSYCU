@@ -1,20 +1,21 @@
 import React from 'react'
 
 export function FNCUMark({size=40,className='',label='FNCU'}:{size?:number;className?:string;label?:string}){
-  return <svg className={className} width={size} height={size} viewBox="0 0 80 80" role="img" aria-label={label} xmlns="http://www.w3.org/2000/svg">
+  return <svg className={className} width={size} height={size} viewBox="0 0 96 96" role="img" aria-label={label} xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="fncuGold" x1="12" y1="10" x2="68" y2="70" gradientUnits="userSpaceOnUse"><stop stopColor="#F6E3A5"/><stop offset=".45" stopColor="#D4AF37"/><stop offset="1" stopColor="#9C7420"/></linearGradient>
+      <linearGradient id="fncuGold" x1="18" y1="12" x2="78" y2="84" gradientUnits="userSpaceOnUse"><stop stopColor="#F4E2A1"/><stop offset=".46" stopColor="#D4AF37"/><stop offset="1" stopColor="#9B741F"/></linearGradient>
     </defs>
-    <path d="M40 5 70 22v36L40 75 10 58V22L40 5Z" fill="#07152F" stroke="url(#fncuGold)" strokeWidth="3"/>
-    <path d="M25 23h30v8H34v8h17v8H34v10h-9V23Z" fill="white"/>
-    <path d="M55 23v34h-9V31h-8v-8h17Z" fill="url(#fncuGold)" opacity=".96"/>
-    <path d="M17 61 40 74l23-13" fill="none" stroke="white" strokeOpacity=".16" strokeWidth="2"/>
+    <path d="M48 5 84 25.5v45L48 91 12 70.5v-45L48 5Z" fill="#06142D" stroke="url(#fncuGold)" strokeWidth="3.2"/>
+    <path d="M27 27h24v7H34v8h15v7H34v20h-7V27Z" fill="#fff"/>
+    <path d="M52 27h7l14 18.2V27h7v42h-7L59 50.7V69h-7V27Z" fill="url(#fncuGold)"/>
+    <path d="M72.5 56.5V69H59" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="square" opacity=".82"/>
+    <path d="M20 75 48 91l28-16" fill="none" stroke="#fff" strokeOpacity=".14" strokeWidth="2"/>
   </svg>
 }
 
 export function FNCUWordmark({compact=false,className=''}:{compact?:boolean;className?:string}){
   return <div className={`fncu-wordmark ${compact?'compact':''} ${className}`.trim()}>
-    <FNCUMark size={compact?34:42}/>
-    <span><b>FNCU</b><small>FIRST NATIONAL CREDIT UNION</small></span>
+    <FNCUMark size={compact?36:46}/>
+    <span className="fncu-wordmark-copy"><b>FNCU</b><i aria-hidden="true"/><small>FIRST NATIONAL CREDIT UNION</small></span>
   </div>
 }
