@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabaseClient'
 import { customer as seed } from './data/mockData'
 import { CANONICAL_ACCOUNT, CANONICAL_BENEFICIARIES, CANONICAL_VAULTS, makeAccountName } from './data/canonicalBanking'
+import { enrichTransaction } from './data/realisticBanking'
 import type { Transaction } from './types'
 
 type CustomerData = {
@@ -15,10 +16,43 @@ type CustomerData = {
 const CustomerContext = createContext<CustomerData | null>(null)
 const caseNumber = (prefix: string, index: number) => `FX-${new Date().getFullYear()}-${prefix}${String(index).padStart(3, '0')}`
 
-function dbTransaction(t: Transaction, userId: string, accountId: string) {
-  const reference = `${t.reference}-${userId.slice(0, 8)}`
-  const transactionType = t.type ?? t.kind ?? (t.amount >= 0 ? 'Deposit' : 'Payment')
-  return { user_id: userId, account_id: accountId, reference, transaction_type: transactionType, direction: t.amount >= 0 ? 'credit' : 'debit', amount: Math.abs(t.amount), fee: t.fee ?? 0, currency: t.currency, status: t.status.toLowerCase(), counterparty: t.counterparty, description: t.description, memo: t.memo, initiated_at: t.initiatedAt ?? new Date().toISOString(), effective_date: new Date(t.effectiveDate ?? t.date).toISOString().slice(0, 10), posted_at: t.postedAt ? new Date(t.postedAt).toISOString() : null, available_balance_after: t.availableBalanceAfter, posted_balance_after: t.postedBalanceAfter, metadata: { ...(t.metadata ?? {}), kind: t.kind ?? transactionType, category: t.category ?? null, synthetic: true, seed_source: 'mockData-v1' } }
+function dbTransaction(t: Transaction, userId: string, accountId: string, index: number) {
+  const enriched = enrichTransaction(t, index)
+  const reference = `${enriched.reference}-${userId.slice(0, 8)}`
+  const transactionType = enriched.type ?? enriched.kind ?? (enriched.amount >= 0 ? 'Deposit' : 'Payment')
+  return {
+    user_id: userId,
+    account_id: accountId,
+    reference,
+    transaction_type: transactionType,
+    direction: enriched.amount >= 0 ? 'credit' : 'debit',
+    amount: Math.abs(enriched.amount),
+    fee: enriched.fee ?? 0,
+    currency: enriched.currency,
+    status: enriched.status.toLowerCase(),
+    counterparty: enriched.counterparty,
+    description: enriched.description,
+    memo: enriched.memo,
+    initiated_at: enriched.initiatedAt ?? new Date().toISOString(),
+    effective_date: new Date(enriched.effectiveDate ?? enriched.date).toISOString().slice(0, 10),
+    posted_at: enriched.postedAt ? new Date(enriched.postedAt).toISOString() : null,
+    available_balance_after: enriched.availableBalanceAfter,
+    posted_balance_after: enriched.postedBalanceAfter,
+    metadata: {
+      ...(enriched.metadata ?? {}),
+      kind: enriched.kind ?? transactionType,
+      category: enriched.category ?? null,
+      synthetic: true,
+      seed_source: 'mockData-v1',
+      institution_name: enriched.institution?.name ?? null,
+      merchant: enriched.merchant ?? null,
+      merchant_category: enriched.merchantCategory ?? null,
+      counterparty_details: enriched.counterpartyDetails ?? null,
+      source_account: enriched.sourceAccount ?? null,
+      destination_account: enriched.destinationAccount ?? null,
+      fee: enriched.fee ?? 0,
+    },
+  }
 }
 
 async function ensureCustomer(userId: string) {
@@ -80,7 +114,7 @@ async function ensureCustomer(userId: string) {
   if ((canonicalSeedCount ?? 0) !== seed.transactions.length) {
     const cleaned = await supabase.rpc('replace_own_mockdata_seed', { p_account_id: account!.id })
     if (cleaned.error) throw cleaned.error
-    const exactRows = seed.transactions.map(t => dbTransaction(t, userId, account!.id))
+    const exactRows = seed.transactions.map((t, index) => dbTransaction(t, userId, account!.id, index))
     for (let i = 0; i < exactRows.length; i += 100) {
       const result = await supabase.from('transactions').insert(exactRows.slice(i, i + 100))
       if (result.error) throw result.error
@@ -94,12 +128,43 @@ async function ensureCustomer(userId: string) {
   const { data: security } = await supabase.from('security_preferences').select('user_id').eq('user_id', userId).maybeSingle(); if (!security) { const result = await supabase.from('security_preferences').insert({ user_id: userId, two_fa: true, passkey: false, alerts: true }); if (result.error) throw result.error }
   const { data: card } = await supabase.from('card_controls').select('id').eq('user_id', userId).eq('account_id', account!.id).maybeSingle(); if (!card) { const result = await supabase.from('card_controls').insert({ user_id: userId, account_id: account!.id, last4: account!.account_number ? String(account!.account_number).slice(-4) : CANONICAL_ACCOUNT.last4 }); if (result.error) throw result.error }
   const { count: supportCount } = await supabase.from('support_cases').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!supportCount) { const result = await supabase.from('support_cases').insert([{ user_id: userId, case_number: caseNumber('AR', 1), subject: 'Account relationship review', status: 'open', priority: 'priority' }]); if (result.error) throw result.error }
-  const { count: messageCount } = await supabase.from('secure_messages').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!messageCount) { const result = await supabase.from('secure_messages').insert([{ user_id: userId, subject: 'Relationship team · Quarterly review', body: 'Your latest relationship summary is ready.' }, { user_id: userId, subject: 'Security · Device confirmation', body: 'Your trusted-device list was updated.' }]); if (result.error) throw result.error }
   const pref = await supabase.from('notification_preferences').select('user_id').eq('user_id', userId).maybeSingle(); if (!pref.data) { const result = await supabase.from('notification_preferences').insert({ user_id: userId }); if (result.error) throw result.error }
 }
 
-function normalizeTransactionStatus(value: any): Transaction['status'] { const s = String(value ?? '').trim().toLowerCase(); if (['completed','complete','posted','settled','processed'].includes(s)) return 'Completed'; if (s === 'pending') return 'Pending'; if (s === 'failed') return 'Failed'; if (['reversed','reversal'].includes(s)) return 'Reversed'; return 'Review' as Transaction['status'] }
-function toTransaction(row: any): Transaction { return { id: row.id, reference: row.reference, type: row.transaction_type, kind: row.metadata?.kind ?? row.transaction_type, category: row.metadata?.category ?? null, status: normalizeTransactionStatus(row.status), amount: row.direction === 'debit' ? -Number(row.amount) : Number(row.amount), currency: row.currency, direction: row.direction, description: row.description, date: row.effective_date, time: new Date(row.posted_at ?? row.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }), counterparty: row.counterparty, memo: row.memo, fee: Number(row.fee ?? 0), effectiveDate: row.effective_date, postedBalanceAfter: row.posted_balance_after, availableBalanceAfter: row.available_balance_after, accountId: row.account_id, metadata: row.metadata ?? {} } as Transaction }
+function normalizeTransactionStatus(value: any): Transaction['status'] { const s = String(value ?? '').trim().toLowerCase(); if (['completed','complete','posted','settled','processed'].includes(s)) return 'Completed'; if (s === 'pending') return 'Pending'; if (s === 'failed') return 'Failed'; if (['reversed','reversal'].includes(s)) return 'Reversed'; return 'Completed' }
+function toTransaction(row: any): Transaction {
+  const metadata = row.metadata ?? {}
+  return {
+    id: row.id,
+    reference: row.reference,
+    type: row.transaction_type,
+    kind: metadata.kind ?? row.transaction_type,
+    category: metadata.category ?? null,
+    status: normalizeTransactionStatus(row.status),
+    amount: row.direction === 'debit' ? -Number(row.amount) : Number(row.amount),
+    currency: row.currency,
+    direction: row.direction,
+    description: row.description,
+    date: row.effective_date,
+    time: new Date(row.posted_at ?? row.initiated_at ?? row.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    counterparty: row.counterparty,
+    counterpartyDetails: metadata.counterparty_details ?? undefined,
+    sourceAccount: metadata.source_account ?? undefined,
+    destinationAccount: metadata.destination_account ?? undefined,
+    institution: metadata.institution_name ? { name: metadata.institution_name, type: 'Bank' } : undefined,
+    merchant: metadata.merchant ?? undefined,
+    merchantCategory: metadata.merchant_category ?? undefined,
+    memo: row.memo,
+    fee: Number(row.fee ?? 0),
+    initiatedAt: row.initiated_at,
+    effectiveDate: row.effective_date,
+    postedAt: row.posted_at,
+    postedBalanceAfter: row.posted_balance_after,
+    availableBalanceAfter: row.available_balance_after,
+    accountId: row.account_id,
+    metadata,
+  }
+}
 
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null); const [loading, setLoading] = useState(true); const [data, setData] = useState<Omit<CustomerData, 'loading' | 'session' | 'refresh'>>({ profile: null, account: null, vaults: [], beneficiaries: [], transactions: [], notifications: [], card: null, security: { two_fa: true, passkey: false, alerts: true }, notificationPreferences: null, supportCases: [], messages: [], externalAccounts: [], categories: [], budgets: [], recurringPayments: [], billPayees: [], billPayments: [], directDeposit: [], checkDeposits: [], loginEvents: [], devices: [] })
