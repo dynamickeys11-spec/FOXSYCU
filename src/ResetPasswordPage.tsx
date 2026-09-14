@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react'
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
+import { FNCUWordmark } from './FNCUBrand'
 import './auth.css'
 
 export default function ResetPasswordPage() {
@@ -37,7 +38,7 @@ export default function ResetPasswordPage() {
   }
 
   return <main className="welcome">
-    <div className="welcome-brand"><div className="brand-mark">F</div><div><b>FNCU</b><small>FIRST NATIONAL CREDIT UNION</small></div></div>
+    <div className="welcome-brand"><FNCUWordmark compact /></div>
     <div className="auth-modal" style={{ position: 'static', opacity: 1 }}><section className="auth-card-wide">
       <span className="auth-eyebrow">FNCU CUSTOMER ACCESS</span>
       <h2>{success ? 'Password changed' : 'Change your password'}</h2>
