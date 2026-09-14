@@ -20,6 +20,7 @@ import './card-atm.css'
 import './receipt-presentation.css'
 import './polish.css'
 import './avatar-fix.css'
+import './responsive-platform.css'
 
 function useMfaGate(session: any) {
   const [ready, setReady] = useState(false); const [needs, setNeeds] = useState(false)
