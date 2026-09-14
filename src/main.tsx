@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
 import AuthPage from './AuthPage'
@@ -42,14 +42,6 @@ function useMfaGate(session: any) {
   return { ready, needs, setNeeds }
 }
 
-function useSessionBoundary() {
-  useEffect(() => {
-    const leave = () => { void supabase.auth.signOut({ scope: 'local' }) }
-    window.addEventListener('pagehide', leave)
-    return () => window.removeEventListener('pagehide', leave)
-  }, [])
-}
-
 function Loading() {
   return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', fontFamily: 'Inter,system-ui,sans-serif' }}>Loading FOXSYCU…</main>
 }
@@ -57,7 +49,6 @@ function Loading() {
 function ProtectedCustomerApp() {
   const { session, loading } = useCustomerData()
   const location = useLocation()
-  useSessionBoundary()
   const gate = useMfaGate(session)
   if (loading) return <Loading />
   if (!session) return <AuthPage />
@@ -70,7 +61,6 @@ function ProtectedCustomerApp() {
 
 function ProtectedProfile() {
   const { session, loading } = useCustomerData()
-  useSessionBoundary()
   const gate = useMfaGate(session)
   if (loading) return <Loading />
   if (!session) return <AuthPage />
@@ -81,7 +71,6 @@ function ProtectedProfile() {
 
 function ProtectedAdmin() {
   const { session, loading } = useCustomerData()
-  useSessionBoundary()
   const gate = useMfaGate(session)
   if (loading) return <Loading />
   if (!session) return <AuthPage />
