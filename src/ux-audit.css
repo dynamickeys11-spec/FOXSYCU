@@ -29,4 +29,14 @@ button,a{ -webkit-tap-highlight-color:transparent }
   .modal-actions>*{width:100%}
   .receipt-grid{grid-template-columns:1fr}
 }
+/* Mobile hamburger drawer: keep the security and sign-out controls visible while the long navigation list scrolls independently. */
+.sidebar{min-height:100dvh;overflow:hidden}
+.sidebar nav{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.sidebar-bottom{flex:0 0 auto;position:relative;z-index:2;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+.sidebar-bottom .security-mini,.sidebar-bottom .signout{min-height:44px}
+@media(max-width:760px){
+  .sidebar.open{overflow:hidden}
+  .sidebar nav{-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+  .sidebar-bottom{background:inherit}
+}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
