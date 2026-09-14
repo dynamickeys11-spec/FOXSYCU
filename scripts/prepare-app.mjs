@@ -9,7 +9,7 @@ if (!canonical.includes("from './CustomerProvider'") || !canonical.includes("fro
   throw new Error('FOXSYCU canonical banking UI must use the live Supabase customer data layer.')
 }
 
-if (!main.includes("./CanonicalLedgerApp") || !main.includes("./TransferCenterV3") || !main.includes("./CardsCenterV5")) {
+if (!main.includes("./CanonicalLedgerApp") || !main.includes("./TransferCenterV4") || !main.includes("./CardsCenterV5")) {
   throw new Error('FOXSYCU main routing must use the canonical live banking application and live transfer/card implementations.')
 }
 
