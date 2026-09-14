@@ -5,8 +5,8 @@ import { BankingShell } from './BankingShell'
 import { useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import './feature-banking.css'
+import './beneficiaries-v2.css'
 
-const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const maskRouting=(v:string)=>v ? `${v.slice(0,3)}-${v.slice(3,6)}-${v.slice(6)}` : '—'
 
 export function BeneficiariesPageV2(){
