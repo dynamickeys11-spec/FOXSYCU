@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom'
 import AuthPage from './AuthPage'
+import ResetPasswordPage from './ResetPasswordPage'
 import { MFAChallenge } from './MFAChallenge'
 import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
@@ -31,5 +32,5 @@ function Loading(){return <main style={{minHeight:'100vh',display:'grid',placeIt
 function ProtectedCustomerApp(){const{session,loading,account,profile}=useCustomerData();const location=useLocation();const gate=useMfaGate(session);if(loading)return <Loading/>;if(!session)return <AuthPage/>;if(!account||!profile)return <Loading/>;if(!gate.ready)return <Loading/>;if(gate.needs)return <MFAChallenge onVerified={()=>gate.setNeeds(false)}/>;if(location.pathname==='/transfers')return <TransferCenterV4/>;if(location.pathname==='/transactions')return <TransactionsPage/>;if(location.pathname==='/messages')return <MessagesPage/>;if(location.pathname==='/cards')return <CardsCenterV5/>;if(location.pathname==='/beneficiaries')return <BeneficiariesPageV2/>;return <CanonicalLedgerApp/>}
 function ProtectedProfile(){const{session,loading,account,profile}=useCustomerData();const gate=useMfaGate(session);if(loading)return <Loading/>;if(!session)return <AuthPage/>;if(!account||!profile)return <Loading/>;if(!gate.ready)return <Loading/>;if(gate.needs)return <MFAChallenge onVerified={()=>gate.setNeeds(false)}/>;return <ProfilePage/>}
 function ProtectedAdmin(){const{session,loading,account}=useCustomerData();const gate=useMfaGate(session);if(loading)return <Loading/>;if(!session)return <AuthPage/>;if(!account)return <Loading/>;if(!gate.ready)return <Loading/>;if(gate.needs)return <MFAChallenge onVerified={()=>gate.setNeeds(false)}/>;return <AdminPage/>}
-function Root(){const location=useLocation();const navigate=useNavigate();useEffect(()=>{if(location.pathname==='/private-banking')navigate('/',{replace:true})},[location.pathname,navigate]);if(location.pathname==='/login')return <AuthPage/>;return <CustomerProvider>{location.pathname==='/profile'?<ProtectedProfile/>:location.pathname==='/admin'?<ProtectedAdmin/>:<ProtectedCustomerApp/>}</CustomerProvider>}
+function Root(){const location=useLocation();const navigate=useNavigate();useEffect(()=>{if(location.pathname==='/private-banking')navigate('/',{replace:true})},[location.pathname,navigate]);if(location.pathname==='/reset-password')return <ResetPasswordPage/>;if(location.pathname==='/login')return <AuthPage/>;return <CustomerProvider>{location.pathname==='/profile'?<ProtectedProfile/>:location.pathname==='/admin'?<ProtectedAdmin/>:<ProtectedCustomerApp/>}</CustomerProvider>}
 createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><Root/></BrowserRouter></StrictMode>)
