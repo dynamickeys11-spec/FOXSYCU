@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient'
 
-export type MoneyMovementRail = 'internal' | 'ach' | 'wire' | 'zelle_like' | 'deposit'
+export type MoneyMovementRail = 'internal' | 'ach' | 'wire' | 'international' | 'zelle_like' | 'deposit'
 export type MoneyMovementInput = { idempotencyKey: string; rail: MoneyMovementRail; sourceAccountId?: string | null; destinationAccountId?: string | null; beneficiaryId?: string | null; amount: number; currency?: string; memo?: string | null; scheduledFor?: string | null; metadata?: Record<string, unknown> }
 type MovementResult = { movement_id: string; reference: string; status: string; fee: number; idempotent: boolean }
 
