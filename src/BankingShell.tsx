@@ -21,19 +21,20 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
  const name=profile?.preferred_name||profile?.full_name||'Customer';const initials=name.split(/\s+/).filter(Boolean).map((p:string)=>p[0]).join('').slice(0,2).toUpperCase()||'CU';const avatarUrl=profile?.avatar_url||''
  const Avatar=()=>avatarUrl?<img className="fncu-avatar-image" src={avatarUrl} alt="" aria-hidden="true"/>:<span>{initials}</span>
  const isActive=(path:string)=>path==='/'?location.pathname==='/':location.pathname.startsWith(path)
+ const drawerActive=(path:string)=>{const [pathname,search]=path.split('?');if(location.pathname!==pathname)return false;if(!search)return pathname==='/'?location.pathname==='/':true;return new URLSearchParams(location.search).toString()===search}
  const service=(key:string)=>`/services?service=${key}`
  const sections:DrawerSection[]=[
-  {label:'Accounts',items:[{label:'Account overview',path:'/',icon:Landmark}]},
+  {label:'Accounts',items:[]},
   {label:'Transfers',items:[{label:'Transfer money',path:'/transfers',icon:MoveRight},{label:'Transfer history',path:'/transactions',icon:Activity}]},
   {label:'Payments & deposits',items:[
     {label:'Bill pay',path:service('billpay'),icon:FileText},
-    {label:'Pay a person',path:'/transfers?mode=zelle_like',icon:Users},
+    {label:'Pay a person',path:'/transfers?mode=p2p',icon:Users},
     {label:'Account to account',path:'/transfers?mode=internal',icon:Landmark},
     {label:'Send ACH',path:'/transfers?mode=ach',icon:MoveRight},
     {label:'Remote check deposit',path:service('deposit'),icon:Receipt},
   ]},
   {label:'Statements & alerts',items:[{label:'Statements',path:service('statements'),icon:FileText},{label:'Alerts',path:service('alerts'),icon:Bell},{label:'eNotices',path:service('notices'),icon:FileText},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
-  {label:'Cards & loans',items:[{label:'Credit card',path:'/cards',icon:CreditCard},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness}]},
+  {label:'Cards & loans',items:[{label:'Debit card',path:'/cards',icon:CreditCard},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness}]},
   {label:'Profile & security',items:[{label:'Profile & settings',path:'/profile',icon:Settings},{label:'Beneficiaries',path:'/beneficiaries',icon:Users}]},
   {label:'Support',items:[{label:'Locations & ATMs',path:service('locations'),icon:MapPin}]},
  ]
@@ -57,7 +58,7 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
      <button className="fncu-drawer-account" onClick={()=>{setOpen(false);navigate('/profile')}}><span className="avatar"><Avatar/></span><span><b>{name}</b><small>{account?.account_type||'Checking'} · {account?.currency||'USD'}</small></span></button>
      <div className="fncu-drawer-links">
        <NavLink to="/" end onClick={()=>setOpen(false)} className={isActive('/')?'active':''}><Home size={18}/><span>Overview</span></NavLink>
-       {sections.map(section=><div className="fncu-drawer-section" key={section.label}><div className="fncu-drawer-section-label">{section.label}</div>{section.items.map(item=><NavLink key={`${section.label}-${item.label}`} to={item.path} onClick={()=>setOpen(false)} className={isActive(item.path.split('?')[0])?'active':''}><item.icon size={17}/><span>{item.label}</span></NavLink>)}</div>)}
+       {sections.map(section=><div className="fncu-drawer-section" key={section.label}>{section.items.length>0&&<div className="fncu-drawer-section-label">{section.label}</div>}{section.items.map(item=><NavLink key={`${section.label}-${item.label}`} to={item.path} onClick={()=>setOpen(false)} className={drawerActive(item.path)?'active':''}><item.icon size={17}/><span>{item.label}</span></NavLink>)}</div>)}
      </div>
      <div className="fncu-drawer-footer"><div className="fncu-drawer-security"><ShieldCheck size={15}/><span>Secure customer access</span></div><button className="fncu-drawer-signout" onClick={()=>void import('./supabaseClient').then(({supabase})=>supabase.auth.signOut())}><LogOut size={16}/>Sign out</button></div>
    </aside>
