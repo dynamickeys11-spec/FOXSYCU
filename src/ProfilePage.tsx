@@ -18,6 +18,12 @@ const maskEmail = (email?: string | null) => {
   return `${visible}${'•'.repeat(hiddenCount)}@${domain}`
 }
 
+const profileToForm = (profile: any | null): Record<string,string> => {
+  const next: Record<string,string> = {}
+  fields.forEach(k => { next[k] = String(profile?.[k] ?? '') })
+  return next
+}
+
 export default function ProfilePage(){
   const { profile, account, security, session, refresh } = useCustomerData()
   const [editing,setEditing]=useState(false)
@@ -28,12 +34,26 @@ export default function ProfilePage(){
   const [passkeyCount,setPasskeyCount]=useState(0)
   const [message,setMessage]=useState('')
   const [avatarError,setAvatarError]=useState('')
-  const [form,setForm]=useState<Record<string,string>>({})
+  const [form,setForm]=useState<Record<string,string>>(()=>profileToForm(profile))
   const [avatarUrl,setAvatarUrl]=useState('')
 
-  useEffect(()=>{const next:Record<string,string>={};fields.forEach(k=>next[k]=String(profile?.[k]??''));setForm(next);setAvatarUrl(String(profile?.avatar_url??''))},[profile])
+  useEffect(()=>{
+    if(editing) return
+    setForm(profileToForm(profile))
+    setAvatarUrl(String(profile?.avatar_url??''))
+  },[profile,editing])
   useEffect(()=>{let active=true;const load=async()=>{if(!session?.user)return;const api=(supabase.auth as any).passkey;if(!api?.list)return;const{data,error}=await api.list();if(active&&!error)setPasskeyCount(Array.isArray(data)?data.length:0)};void load();return()=>{active=false}},[session?.user?.id])
   const update=(key:string,value:string)=>setForm(v=>({...v,[key]:value}))
+  const startEditing=()=>{
+    setForm(profileToForm(profile))
+    setMessage('')
+    setEditing(true)
+  }
+  const cancelEditing=()=>{
+    setForm(profileToForm(profile))
+    setMessage('')
+    setEditing(false)
+  }
   const save=async(e:FormEvent)=>{e.preventDefault();if(!session?.user)return;setBusy(true);setMessage('');try{
     const fullName=form.full_name?.trim();
     if(!fullName) throw new Error('Legal full name is required.');
@@ -41,9 +61,9 @@ export default function ProfilePage(){
     const {data,error}=await supabase.from('profiles').update(payload).eq('id',session.user.id).select('*').single();
     if(error)throw new Error(`Unable to save your profile: ${error.message}`);
     if(!data)throw new Error('No customer profile was saved.');
-    await refresh();
-    setForm(v=>({...v,...Object.fromEntries(fields.map(k=>[k,String(data[k]??'')]))}));
+    setForm(profileToForm(data));
     setEditing(false);
+    await refresh();
     setMessage('Your customer profile has been saved.')
   }catch(e){setMessage(e instanceof Error?e.message:'Unable to save your profile.')}finally{setBusy(false)}}
 
@@ -63,6 +83,6 @@ export default function ProfilePage(){
       <section className="profile-card"><div className="profile-card-head"><div><h2>Account relationship</h2><p>Primary account details.</p></div></div><div className="profile-details"><div><span>Account</span><b>{accountName}</b></div><div><span>Account type</span><b>{account?.account_type||'Not provided'}</b></div><div><span>Currency</span><b>{account?.currency||'USD'}</b></div><div><span>Status</span><b className="profile-green">{account?.status||'Not available'}</b></div><div><span>Account number</span><b>{account?.account_number_last4?`•••• ${account.account_number_last4}`:'Not available'}</b></div><div><span>Customer tier</span><b>{profile?.tier||'Customer'}</b></div></div></section>
       <section className="profile-card"><div className="profile-card-head"><div><h2>Security & preferences</h2><p>Protection settings connected to your account.</p></div><ShieldCheck size={18}/></div><div className="profile-security"><div><span>Two-factor authentication</span><b className={security?.two_fa?'profile-green':''}>{security?.two_fa?'Enabled':'Not enabled'}</b></div><div className="profile-passkey-row"><span>Passkey</span><span className="profile-passkey-status"><b className={passkeyCount>0?'profile-green':''}>{passkeyCount>0?'Active':'Not registered'}</b><button type="button" onClick={()=>void registerPasskey()} disabled={passkeyBusy}><KeyRound size={14}/>{passkeyBusy?'Waiting…':passkeyCount>0?'Register another':'Set up passkey'}</button></span></div><div><span>Security alerts</span><b className={security?.alerts?'profile-green':''}>{security?.alerts?'Enabled':'Not enabled'}</b></div><div><span>Profile completion</span><b className={profile?.profile_completed?'profile-green':''}>{profile?.profile_completed?'Complete':'Needs attention'}</b></div></div></section>
     </div>
-    <div className="profile-footer-actions"><button className="profile-edit profile-edit-bottom" onClick={()=>{setEditing(v=>!v);setMessage('')}}><Edit3 size={14}/>{editing?'Cancel editing':'Edit profile'}</button></div>
+    <div className="profile-footer-actions"><button className="profile-edit profile-edit-bottom" onClick={editing?cancelEditing:startEditing}><Edit3 size={14}/>{editing?'Cancel editing':'Edit profile'}</button></div>
   </div></BankingShell>
 }
