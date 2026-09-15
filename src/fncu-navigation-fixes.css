@@ -9,8 +9,14 @@
 .fncu-drawer-section-label{position:sticky!important;top:0!important;z-index:2!important}
 .fncu-drawer-footer{flex:0 0 auto!important;background:#fff!important;border-top:1px solid #e6edf4!important;padding-bottom:max(12px,env(safe-area-inset-bottom))!important}
 .fncu-drawer-links a,.fncu-drawer-account,.fncu-drawer-signout{touch-action:manipulation!important}
-.fncu-drawer-backdrop{position:fixed!important;inset:0!important;z-index:210!important;cursor:pointer!important}
+.fncu-drawer-backdrop{position:fixed!important;inset:0!important;z-index:210!important;cursor:pointer!important;border:0!important;padding:0!important;background:rgba(16,24,40,.28)!important}
 .fncu-header-tools{position:relative;z-index:121}
 .fncu-menu-button{position:relative;z-index:122;touch-action:manipulation}
-@media(min-width:700px){.fncu-reference-drawer{top:14px!important;bottom:14px!important;height:calc(100dvh - 28px)!important;border-radius:0 16px 16px 0!important}.fncu-drawer-backdrop{inset:0!important}}
+@media(min-width:901px){
+ .fncu-reference-drawer{transform:none!important;transition:none!important;z-index:80!important}
+ .fncu-reference-drawer.open{transform:none!important}
+ .fncu-drawer-backdrop{display:none!important}
+ .fncu-drawer-close{display:none!important}
+}
+@media(min-width:700px) and (max-width:900px){.fncu-reference-drawer{top:14px!important;bottom:14px!important;height:calc(100dvh - 28px)!important;border-radius:0 16px 16px 0!important}.fncu-drawer-backdrop{inset:0!important}}
 @media(max-width:699px){.fncu-reference-drawer{width:min(360px,calc(100vw - 12px))!important}.fncu-drawer-links{padding-bottom:18px!important}}
