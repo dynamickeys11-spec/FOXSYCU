@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ArrowDownLeft, ArrowUpRight, Eye, EyeOff, MessageSquare, MoveRight, Plus, Send, WalletCards } from 'lucide-react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { BankingShell } from './BankingShell'
 import './fncu-home.css'
@@ -9,7 +9,7 @@ const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{min
 const shortDate=(value:string)=>{const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 
 export default function FNCUHome(){
- const{account,vaults,profile,transactions}=useCustomerData();const navigate=useNavigate();const[visible,setVisible]=useState(true)
+ const{account,vaults,profile,transactions}=useCustomerData();const[visible,setVisible]=useState(true)
  const name=profile?.preferred_name||profile?.full_name||'Customer';const first=name.split(/\s+/)[0];const balance=Number(account?.available_balance||0);const savings=vaults.reduce((sum,v)=>sum+Number(v.balance||0),0)
  const recent=useMemo(()=>transactions.slice(0,5).map((t:any)=>({...t,amount:t.direction==='debit'?-Math.abs(Number(t.amount)):Number(t.amount)})),[transactions])
  const actions=[
@@ -22,7 +22,6 @@ export default function FNCUHome(){
    <div className="fh-reference-home">
      <header className="fh-topline">
        <div><span>Account overview</span><h1>Good morning, {first}</h1></div>
-       <button className="fh-profile-dot" onClick={()=>navigate('/profile')} aria-label="Open profile"><span>{name.split(/\s+/).map((p:string)=>p[0]).join('').slice(0,2).toUpperCase()}</span></button>
      </header>
 
      <section className="fh-balance-card" aria-label="FNCU checking account balance">
@@ -44,7 +43,7 @@ export default function FNCUHome(){
      <section className="fh-activity">
        <div className="fh-section-head"><div><span>RECENT ACTIVITY</span><h2>Transactions</h2></div><NavLink to="/transactions">View all</NavLink></div>
        <div className="fh-activity-list">
-         {recent.map((t:any)=><button className="fh-activity-row" key={t.id} onClick={()=>navigate('/transactions')}>
+         {recent.map((t:any)=><button className="fh-activity-row" key={t.id} onClick={()=>location.href='/transactions'}>
            <span className={`fh-tx-badge ${t.amount>=0?'in':'out'}`}>{t.amount>=0?<ArrowDownLeft size={16}/>:<ArrowUpRight size={16}/>}</span>
            <span className="fh-tx-main"><b>{t.description||t.counterparty||'Account activity'}</b><small>{shortDate(t.date||t.created_at||'')} · {t.account_name||'Checking'}</small></span>
            <strong className={t.amount>=0?'positive':''}>{t.amount>=0?'+':''}{money(t.amount)}</strong>
