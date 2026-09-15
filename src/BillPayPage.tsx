@@ -7,17 +7,251 @@ import { supabase } from './supabaseClient'
 import './feature-banking.css'
 import './bill-pay.css'
 
-const money=(n:number)=>`$${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})`
-const categories=['Utilities','Internet','Mobile','Insurance','Credit card','Loan','Housing','Other']
-type Payee={id:string;name:string;account_reference:string|null;delivery_method:string;status:string;category:string}
+const money = (n: number) => `$${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const categories = ['Utilities', 'Internet', 'Mobile', 'Insurance', 'Credit card', 'Loan', 'Housing', 'Other']
 
-export default function BillPayPage(){
- const{account,profile}=useCustomerData();const navigate=useNavigate();const[payees,setPayees]=useState<Payee[]>([]);const[selected,setSelected]=useState<Payee|null>(null);const[name,setName]=useState('');const[reference,setReference]=useState('');const[category,setCategory]=useState('Utilities');const[amount,setAmount]=useState('');const[date,setDate]=useState(new Date().toISOString().slice(0,10));const[showAdd,setShowAdd]=useState(false);const[busy,setBusy]=useState(false);const[message,setMessage]=useState('');const[paidAmount,setPaidAmount]=useState(0);const[error,setError]=useState('')
- const value=Number(amount)||0
- const load=async()=>{const{data,error:e}=await supabase.from('bill_payees').select('id,name,account_reference,delivery_method,status,category').eq('status','active').order('name');if(e){setError(e.message);return}setPayees((data||[]) as Payee[])}
- useEffect(()=>{void load()},[])
- const savePayee=async()=>{if(!name.trim()||!profile?.id)return;setBusy(true);setError('');try{const{data,error:e}=await supabase.from('bill_payees').insert({user_id:profile.id,name:name.trim(),account_reference:reference.trim()||null,category,delivery_method:'electronic',status:'active'}).select('id,name,account_reference,delivery_method,status,category').single();if(e)throw e;setSelected(data as Payee);setShowAdd(false);setName('');setReference('');await load()}catch(e:any){setError(e?.message||'Unable to save biller.')}finally{setBusy(false)}}
- const pay=async()=>{if(!account||!selected||value<=0||value>Number(account.available_balance||0))return;setBusy(true);setError('');try{const{data,error:e}=await supabase.rpc('create_bill_payment',{p_payee_id:selected.id,p_account_id:account.id,p_amount:value,p_scheduled_for:date});if(e)throw e;setPaidAmount(value);setMessage(data?.reference||'Bill payment scheduled');setAmount('')}catch(e:any){setError(e?.message||'Unable to schedule this bill payment.')}finally{setBusy(false)}}
- if(message)return <BankingShell><div className="fb-page bill-pay-workspace"><header className="fb-heading"><div className="fb-heading-actions"><button className="fb-btn" onClick={()=>navigate('/')}><ArrowLeft size={15}/> Account overview</button><button className="fb-btn" onClick={()=>navigate('/transfers')}>Transfer</button><button className="fb-btn" onClick={()=>navigate('/deposit')}>Deposit</button></div><span>BILL PAY</span><h1>Payment scheduled</h1><p>Your bill payment has been accepted by the FNCU bill-pay workflow.</p></header><section className="fb-card"><div className="fb-success"><Check size={22}/><div><b>{money(paidAmount)} scheduled to {selected?.name}</b><p>Reference {message}</p></div></div><div className="fb-actions"><button className="fb-btn primary" onClick={()=>setMessage('')}>Pay another bill</button><button className="fb-btn" onClick={()=>navigate('/transactions')}>View activity</button></div></section></div></BankingShell>
- return <BankingShell><div className="fb-page bill-pay-workspace"><header className="fb-heading"><div className="fb-heading-actions"><button className="fb-btn" onClick={()=>navigate('/')}><ArrowLeft size={15}/> Account overview</button><button className="fb-btn" onClick={()=>navigate('/transfers')}>Transfer</button><button className="fb-btn" onClick={()=>navigate('/deposit')}>Deposit</button></div><span>BILL PAY</span><h1>Pay a bill</h1><p>Pay a merchant, utility, financial institution, or other U.S. biller from your FNCU account.</p></header><div className="fb-grid"><section className="fb-card"><div className="fb-card-head"><h2>{selected?'Payment details':'Choose a biller'}</h2><p>{selected?`${selected.name} · ${selected.category}`:'Select a saved biller or add one.'}</p></div>{payees.length?<div className="bill-payee-list">{payees.map(p=><button key={p.id} className={`bill-payee ${selected?.id===p.id?'active':''}`} onClick={()=>setSelected(p)}><span><Receipt size={17}/></span><div><b>{p.name}</b><small>{p.category} · {p.account_reference||'No account reference'}</small></div><ChevronRight size={16}/></button>)}</div>:<div className="fb-empty">No saved billers yet. Add the company or organization you need to pay.</div>}<button className="fb-btn" onClick={()=>setShowAdd(v=>!v)}><Plus size={15}/> Add biller</button>{showAdd&&<div className="bill-add"><label className="fb-field">Biller name<input value={name} onChange={e=>setName(e.target.value)} placeholder="Electric company, insurer, card issuer…"/></label><label className="fb-field">Bill category<select value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(c=><option key={c}>{c}</option>)}</select></label><label className="fb-field">Account / customer reference<input value={reference} onChange={e=>setReference(e.target.value)} placeholder="Optional biller account number"/></label><button className="fb-btn primary" disabled={!name.trim()||busy||!profile?.id} onClick={()=>void savePayee()}>{busy?'Saving…':'Save biller'}</button></div>}{selected&&<><label className="fb-field">Amount<input value={amount} onChange={e=>setAmount(e.target.value.replace(/[^0-9.]/g,''))} inputMode="decimal" placeholder="0.00"/></label><label className="fb-field">Payment date<input value={date} min={new Date().toISOString().slice(0,10)} onChange={e=>setDate(e.target.value)} type="date"/></label><button className="fb-btn primary" disabled={busy||!value||value>Number(account?.available_balance||0)} onClick={()=>void pay()}>{busy?'Scheduling…':<>Schedule payment <CalendarDays size={15}/></>}</button></>}{error&&<p className="fb-error">{error}</p>}</section><section className="fb-card"><div className="fb-card-head"><h2>Bill Pay</h2><p>One place for recurring and one-time household payments.</p></div><div className="fb-detail"><span>From</span><b>{account?.account_name||'Checking'}<small>Available {money(Number(account?.available_balance||0))}</small></b></div><div className="fb-detail"><span>Saved billers</span><b>{payees.length}</b></div><div className="fb-detail"><span>Categories</span><b>{categories.length}</b></div><div className="fb-total"><span>Current payment</span><strong>{money(value)}</strong></div><div className="bill-categories"><span>Common bill types</span><div>{categories.map(c=><button key={c} onClick={()=>{setCategory(c);setShowAdd(true)}}>{c}</button>)}</div></div></section></div></div></BankingShell>
+type Payee = {
+  id: string
+  name: string
+  account_reference: string | null
+  delivery_method: string
+  status: string
+  category: string
+}
+
+export default function BillPayPage() {
+  const { account, profile } = useCustomerData()
+  const navigate = useNavigate()
+  const [payees, setPayees] = useState<Payee[]>([])
+  const [selected, setSelected] = useState<Payee | null>(null)
+  const [name, setName] = useState('')
+  const [reference, setReference] = useState('')
+  const [category, setCategory] = useState('Utilities')
+  const [amount, setAmount] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [showAdd, setShowAdd] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const [paidAmount, setPaidAmount] = useState(0)
+  const [error, setError] = useState('')
+
+  const value = Number(amount) || 0
+
+  const load = async () => {
+    const { data, error: loadError } = await supabase
+      .from('bill_payees')
+      .select('id,name,account_reference,delivery_method,status,category')
+      .eq('status', 'active')
+      .order('name')
+
+    if (loadError) {
+      setError(loadError.message)
+      return
+    }
+
+    setPayees((data || []) as Payee[])
+  }
+
+  useEffect(() => {
+    void load()
+  }, [])
+
+  const savePayee = async () => {
+    if (!name.trim() || !profile?.id) return
+
+    setBusy(true)
+    setError('')
+
+    try {
+      const { data, error: saveError } = await supabase
+        .from('bill_payees')
+        .insert({
+          user_id: profile.id,
+          name: name.trim(),
+          account_reference: reference.trim() || null,
+          category,
+          delivery_method: 'electronic',
+          status: 'active',
+        })
+        .select('id,name,account_reference,delivery_method,status,category')
+        .single()
+
+      if (saveError) throw saveError
+
+      setSelected(data as Payee)
+      setShowAdd(false)
+      setName('')
+      setReference('')
+      await load()
+    } catch (err: any) {
+      setError(err?.message || 'Unable to save biller.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const pay = async () => {
+    const available = Number(account?.available_balance || 0)
+    if (!account || !selected || value <= 0 || value > available) return
+
+    setBusy(true)
+    setError('')
+
+    try {
+      const { data, error: paymentError } = await supabase.rpc('create_bill_payment', {
+        p_payee_id: selected.id,
+        p_account_id: account.id,
+        p_amount: value,
+        p_scheduled_for: date,
+      })
+
+      if (paymentError) throw paymentError
+
+      setPaidAmount(value)
+      setMessage(data?.reference || 'Bill payment scheduled')
+      setAmount('')
+    } catch (err: any) {
+      setError(err?.message || 'Unable to schedule this bill payment.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (message) {
+    return (
+      <BankingShell>
+        <div className="fb-page bill-pay-workspace">
+          <header className="fb-heading">
+            <div className="fb-heading-actions">
+              <button className="fb-btn" onClick={() => navigate('/')}><ArrowLeft size={15} /> Account overview</button>
+              <button className="fb-btn" onClick={() => navigate('/transfers')}>Transfer</button>
+              <button className="fb-btn" onClick={() => navigate('/deposit')}>Deposit</button>
+            </div>
+            <span>BILL PAY</span>
+            <h1>Payment scheduled</h1>
+            <p>Your bill payment has been accepted by the FNCU bill-pay workflow.</p>
+          </header>
+          <section className="fb-card">
+            <div className="fb-success">
+              <Check size={22} />
+              <div>
+                <b>{money(paidAmount)} scheduled to {selected?.name}</b>
+                <p>Reference {message}</p>
+              </div>
+            </div>
+            <div className="fb-actions">
+              <button className="fb-btn primary" onClick={() => setMessage('')}>Pay another bill</button>
+              <button className="fb-btn" onClick={() => navigate('/transactions')}>View activity</button>
+            </div>
+          </section>
+        </div>
+      </BankingShell>
+    )
+  }
+
+  return (
+    <BankingShell>
+      <div className="fb-page bill-pay-workspace">
+        <header className="fb-heading">
+          <div className="fb-heading-actions">
+            <button className="fb-btn" onClick={() => navigate('/')}><ArrowLeft size={15} /> Account overview</button>
+            <button className="fb-btn" onClick={() => navigate('/transfers')}>Transfer</button>
+            <button className="fb-btn" onClick={() => navigate('/deposit')}>Deposit</button>
+          </div>
+          <span>BILL PAY</span>
+          <h1>Pay a bill</h1>
+          <p>Pay a merchant, utility, financial institution, or other U.S. biller from your FNCU account.</p>
+        </header>
+
+        <div className="fb-grid">
+          <section className="fb-card">
+            <div className="fb-card-head">
+              <h2>{selected ? 'Payment details' : 'Choose a biller'}</h2>
+              <p>{selected ? `${selected.name} · ${selected.category}` : 'Select a saved biller or add one.'}</p>
+            </div>
+
+            {payees.length ? (
+              <div className="bill-payee-list">
+                {payees.map((payee) => (
+                  <button
+                    key={payee.id}
+                    className={`bill-payee ${selected?.id === payee.id ? 'active' : ''}`}
+                    onClick={() => setSelected(payee)}
+                  >
+                    <span><Receipt size={17} /></span>
+                    <div>
+                      <b>{payee.name}</b>
+                      <small>{payee.category} · {payee.account_reference || 'No account reference'}</small>
+                    </div>
+                    <ChevronRight size={16} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="fb-empty">No saved billers yet. Add the company or organization you need to pay.</div>
+            )}
+
+            <button className="fb-btn" onClick={() => setShowAdd((value) => !value)}>
+              <Plus size={15} /> Add biller
+            </button>
+
+            {showAdd && (
+              <div className="bill-add">
+                <label className="fb-field">
+                  Biller name
+                  <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Electric company, insurer, card issuer…" />
+                </label>
+                <label className="fb-field">
+                  Bill category
+                  <select value={category} onChange={(event) => setCategory(event.target.value)}>
+                    {categories.map((item) => <option key={item}>{item}</option>)}
+                  </select>
+                </label>
+                <label className="fb-field">
+                  Account / customer reference
+                  <input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Optional biller account number" />
+                </label>
+                <button className="fb-btn primary" disabled={!name.trim() || busy || !profile?.id} onClick={() => void savePayee()}>
+                  {busy ? 'Saving…' : 'Save biller'}
+                </button>
+              </div>
+            )}
+
+            {selected && (
+              <>
+                <label className="fb-field">
+                  Amount
+                  <input value={amount} onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="0.00" />
+                </label>
+                <label className="fb-field">
+                  Payment date
+                  <input value={date} min={new Date().toISOString().slice(0, 10)} onChange={(event) => setDate(event.target.value)} type="date" />
+                </label>
+                <button className="fb-btn primary" disabled={busy || !value || value > Number(account?.available_balance || 0)} onClick={() => void pay()}>
+                  {busy ? 'Scheduling…' : <><span>Schedule payment</span><CalendarDays size={15} /></>}
+                </button>
+              </>
+            )}
+
+            {error && <p className="fb-error">{error}</p>}
+          </section>
+
+          <section className="fb-card">
+            <div className="fb-card-head">
+              <h2>Bill Pay</h2>
+              <p>One place for recurring and one-time household payments.</p>
+            </div>
+            <div className="fb-detail"><span>From</span><b>{account?.account_name || 'Checking'}<small>Available {money(Number(account?.available_balance || 0))}</small></b></div>
+            <div className="fb-detail"><span>Saved billers</span><b>{payees.length}</b></div>
+            <div className="fb-detail"><span>Categories</span><b>{categories.length}</b></div>
+            <div className="fb-total"><span>Current payment</span><strong>{money(value)}</strong></div>
+            <div className="bill-categories">
+              <span>Common bill types</span>
+              <div>{categories.map((item) => <button key={item} onClick={() => { setCategory(item); setShowAdd(true) }}>{item}</button>)}</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </BankingShell>
+  )
 }
