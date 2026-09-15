@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, Bell, BookOpen, BriefcaseBusiness, CreditCard, FileText, Home, Landmark, LogOut, MapPin, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
+import { Activity, Bell, BriefcaseBusiness, CreditCard, FileText, Home, Landmark, LogOut, MapPin, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { FNCUWordmark } from './FNCUBrand'
@@ -7,6 +7,7 @@ import './world-v2.css'
 import './ux-audit.css'
 import './fncu-identity.css'
 import './fncu-design-system.css'
+import './fncu-navigation-fixes.css'
 
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const nav=[['Home','/',Home],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Services','/services',BriefcaseBusiness],['Profile','/profile',UserRound]] as const
@@ -23,12 +24,12 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
  const service=(key:string)=>`/services?service=${key}`
  const sections:DrawerSection[]=[
   {label:'Accounts',items:[{label:'Account overview',path:'/',icon:Landmark}]},
-  {label:'Transfers',items:[{label:'Transfer money',path:'/transfers',icon:MoveRight},{label:'Scheduled transfers',path:'/transfers?view=scheduled',icon:Receipt},{label:'Transfer history',path:'/transactions?filter=transfers',icon:Activity}]},
+  {label:'Transfers',items:[{label:'Transfer money',path:'/transfers',icon:MoveRight},{label:'Transfer history',path:'/transactions',icon:Activity}]},
   {label:'Payments & deposits',items:[{label:'Bill pay',path:service('billpay'),icon:FileText},{label:'Pay a person',path:service('p2p'),icon:Users},{label:'Account to account',path:service('a2a'),icon:Landmark},{label:'Send ACH',path:service('ach'),icon:MoveRight},{label:'Remote check deposit',path:service('deposit'),icon:Receipt}]},
   {label:'Statements & alerts',items:[{label:'Statements',path:service('statements'),icon:FileText},{label:'Alerts',path:service('alerts'),icon:Bell},{label:'eNotices',path:service('notices'),icon:FileText},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
   {label:'Cards & loans',items:[{label:'Credit card',path:'/cards',icon:CreditCard},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness}]},
   {label:'Profile & security',items:[{label:'Profile & settings',path:'/profile',icon:Settings},{label:'Beneficiaries',path:'/beneficiaries',icon:Users}]},
-  {label:'Support',items:[{label:'Locations & ATMs',path:service('locations'),icon:MapPin},{label:'Contact us',path:service('messages'),icon:MessageSquare}]},
+  {label:'Support',items:[{label:'Locations & ATMs',path:service('locations'),icon:MapPin}]},
  ]
  return <div className="app-shell fncu-reference-app">
    <div className="fncu-reference-device">
@@ -36,8 +37,8 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
       <button className="fncu-header-icon fncu-menu-button" onClick={()=>setOpen(v=>!v)} aria-label="Open navigation"><Menu size={19}/></button>
       <FNCUWordmark compact/>
       <div className="fncu-header-tools">
-        <button className="fncu-header-icon" onClick={()=>setSearchOpen(v=>!v)} aria-label="Search"><Search size={18}/></button>
-        <NavLink className="fncu-header-icon" to="/messages" aria-label="Alerts and messages"><Bell size={18}/></NavLink>
+        <button className="fncu-header-icon" onClick={()=>setSearchOpen(v=>!v)} aria-label="Search activity"><Search size={18}/></button>
+        <NavLink className="fncu-header-icon" to="/services?service=alerts" aria-label="Alerts"><Bell size={18}/></NavLink>
         <button className="fncu-header-profile" onClick={()=>navigate('/profile')} aria-label="Open profile"><span className="avatar"><Avatar/></span></button>
       </div>
     </header>}
