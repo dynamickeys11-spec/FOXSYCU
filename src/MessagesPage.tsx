@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Bell, CalendarDays, MessageSquare, Search, ShieldCheck, X } from 'lucide-react'
 import { BankingShell } from './BankingShell'
 import { useCustomerData } from './CustomerProvider'
+import CustomerServiceChatPage from './CustomerServiceChatPage'
+import { useLocation } from 'react-router-dom'
 import './feature-banking.css'
 
 const dateTime=(v:any)=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}
@@ -11,6 +13,7 @@ const fmtTime=(v:any)=>{if(!v)return '—';const d=new Date(v);return Number.isN
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 
 export default function MessagesPage(){
+ const location=useLocation();if(new URLSearchParams(location.search).get('view')==='customer-service')return <CustomerServiceChatPage/>
  const{messages,transactions}=useCustomerData();const[q,setQ]=useState('');const[open,setOpen]=useState<any|null>(null)
  const txMap=useMemo(()=>new Map(transactions.map(t=>[t.reference,t])),[transactions])
  const rows=useMemo(()=>messages.filter((m:any)=>`${m.subject||''} ${m.body||''} ${m.transaction_reference||''}`.toLowerCase().includes(q.toLowerCase())).sort((a:any,b:any)=>sortTime(b)-sortTime(a)),[messages,q])
