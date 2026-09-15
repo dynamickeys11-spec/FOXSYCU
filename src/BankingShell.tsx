@@ -36,7 +36,7 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
   {label:'Statements & alerts',items:[{label:'Statements',path:service('statements'),icon:FileText},{label:'Alerts',path:service('alerts'),icon:Bell},{label:'eNotices',path:service('notices'),icon:FileText},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
   {label:'Cards & loans',items:[{label:'Debit card',path:'/cards',icon:CreditCard},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness}]},
   {label:'Profile & security',items:[{label:'Profile & settings',path:'/profile',icon:Settings},{label:'Beneficiaries',path:'/beneficiaries',icon:Users}]},
-  {label:'Support',items:[{label:'Locations & ATMs',path:service('locations'),icon:MapPin}]},
+  {label:'Support',items:[{label:'Customer service chat',path:'/messages?view=customer-service',icon:MessageSquare},{label:'Locations & ATMs',path:service('locations'),icon:MapPin}]},
  ]
  return <div className="app-shell fncu-reference-app">
    <div className="fncu-reference-device">
