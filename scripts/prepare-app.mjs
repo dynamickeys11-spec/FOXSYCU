@@ -7,7 +7,7 @@ if (main.includes("./CanonicalLedgerApp") || main.includes('CanonicalLedgerApp')
   throw new Error('FNCU must not load the retired competing customer application.')
 }
 
-for (const required of ["./CustomerProvider", "./TransferCenterFixed", "./CardsCenterV5", "./FNCUHome", "./ProfilePage"]) {
+for (const required of ["./CustomerProvider", "./TransferCenterV2", "./CardsCenterV5", "./FNCUHome", "./ProfilePage"]) {
   if (!main.includes(required)) throw new Error(`FNCU main routing is missing required live module: ${required}`)
 }
 
