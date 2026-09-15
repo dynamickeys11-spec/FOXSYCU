@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, Bell, BookOpen, BriefcaseBusiness, Building2, ChevronDown, CreditCard, FileText, Home, Landmark, LogOut, MapPin, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
+import { Activity, Bell, BookOpen, BriefcaseBusiness, CreditCard, FileText, Home, Landmark, LogOut, MapPin, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { FNCUWordmark } from './FNCUBrand'
@@ -11,7 +11,7 @@ import './fncu-design-system.css'
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const nav=[['Home','/',Home],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Services','/services',BriefcaseBusiness],['Profile','/profile',UserRound]] as const
 
-type DrawerItem={label:string;path:string;icon:any;external?:boolean}
+type DrawerItem={label:string;path:string;icon:any}
 type DrawerSection={label:string;items:DrawerItem[]}
 
 export function BankingShell({children,showHeader=true}:{children:React.ReactNode;showHeader?:boolean}){
@@ -22,12 +22,13 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
  const isActive=(path:string)=>path==='/'?location.pathname==='/':location.pathname.startsWith(path)
  const service=(key:string)=>`/services?service=${key}`
  const sections:DrawerSection[]=[
-  {label:'Accounts',items:[{label:'All Accounts',path:'/',icon:Landmark},{label:'Checking',path:'/',icon:Building2},{label:'Savings',path:'/services?service=statements',icon:BookOpen}]},
-  {label:'Transfers',items:[{label:'Transfer Now',path:'/transfers',icon:MoveRight},{label:'Scheduled Transfers',path:'/transfers?view=scheduled',icon:Receipt},{label:'Transfer History',path:'/transactions?filter=transfers',icon:Activity}]},
-  {label:'Deposit',items:[{label:'Remote Check Deposit',path:service('deposit'),icon:Receipt}]},
-  {label:'Bill Pay',items:[{label:'Pay a Bill',path:service('billpay'),icon:FileText},{label:'Pay a Person',path:service('p2p'),icon:Users},{label:'Account-to-Account',path:service('a2a'),icon:Landmark},{label:'Send ACH',path:service('ach'),icon:MoveRight},{label:'Picture Pay',path:service('billpay'),icon:FileText}]},
-  {label:'Account & Support',items:[{label:'Statements',path:service('statements'),icon:FileText},{label:'Messages',path:'/messages',icon:MessageSquare},{label:'Credit Card',path:'/cards',icon:CreditCard},{label:'Alerts',path:service('alerts'),icon:Bell},{label:'Profile & Settings',path:'/profile',icon:Settings},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness},{label:'Check Ordering',path:service('checks'),icon:BookOpen},{label:'Request Mailed Check',path:service('mailed-check'),icon:Receipt},{label:'eNotices',path:service('notices'),icon:FileText}]},
-  {label:'Access',items:[{label:'Locations & ATMs',path:service('locations'),icon:MapPin},{label:'Contact Us',path:service('messages'),icon:MessageSquare}]},
+  {label:'Accounts',items:[{label:'Account overview',path:'/',icon:Landmark}]},
+  {label:'Transfers',items:[{label:'Transfer money',path:'/transfers',icon:MoveRight},{label:'Scheduled transfers',path:'/transfers?view=scheduled',icon:Receipt},{label:'Transfer history',path:'/transactions?filter=transfers',icon:Activity}]},
+  {label:'Payments & deposits',items:[{label:'Bill pay',path:service('billpay'),icon:FileText},{label:'Pay a person',path:service('p2p'),icon:Users},{label:'Account to account',path:service('a2a'),icon:Landmark},{label:'Send ACH',path:service('ach'),icon:MoveRight},{label:'Remote check deposit',path:service('deposit'),icon:Receipt}]},
+  {label:'Statements & alerts',items:[{label:'Statements',path:service('statements'),icon:FileText},{label:'Alerts',path:service('alerts'),icon:Bell},{label:'eNotices',path:service('notices'),icon:FileText},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
+  {label:'Cards & loans',items:[{label:'Credit card',path:'/cards',icon:CreditCard},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness}]},
+  {label:'Profile & security',items:[{label:'Profile & settings',path:'/profile',icon:Settings},{label:'Beneficiaries',path:'/beneficiaries',icon:Users}]},
+  {label:'Support',items:[{label:'Locations & ATMs',path:service('locations'),icon:MapPin},{label:'Contact us',path:service('messages'),icon:MessageSquare}]},
  ]
  return <div className="app-shell fncu-reference-app">
    <div className="fncu-reference-device">
@@ -36,7 +37,7 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
       <FNCUWordmark compact/>
       <div className="fncu-header-tools">
         <button className="fncu-header-icon" onClick={()=>setSearchOpen(v=>!v)} aria-label="Search"><Search size={18}/></button>
-        <NavLink className="fncu-header-icon" to="/messages" aria-label="Messages"><Bell size={18}/></NavLink>
+        <NavLink className="fncu-header-icon" to="/messages" aria-label="Alerts and messages"><Bell size={18}/></NavLink>
         <button className="fncu-header-profile" onClick={()=>navigate('/profile')} aria-label="Open profile"><span className="avatar"><Avatar/></span></button>
       </div>
     </header>}
@@ -45,13 +46,13 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
     <nav className="mobile-nav fncu-reference-nav" aria-label="Primary navigation">{nav.map(([label,path,Icon])=><NavLink key={label} to={path} end={path==='/' } className={()=>isActive(path)?'active':''}><Icon size={19}/><span>{label}</span></NavLink>)}</nav>
    </div>
    <aside className={`fncu-reference-drawer ${open?'open':''}`} aria-hidden={!open}>
-     <div className="fncu-drawer-head"><FNCUWordmark compact/><button className="fncu-header-icon" onClick={()=>setOpen(false)} aria-label="Close"><X size={18}/></button></div>
-     <button className="fncu-drawer-account" onClick={()=>{setOpen(false);navigate('/profile')}}><span className="avatar"><Avatar/></span><span><b>{name}</b><small>{account?.account_type||'Checking'} · {account?.currency||'USD'}</small></span><ChevronDown size={16}/></button>
+     <div className="fncu-drawer-head"><FNCUWordmark compact/><button className="fncu-header-icon" onClick={()=>setOpen(false)} aria-label="Close navigation"><X size={18}/></button></div>
+     <button className="fncu-drawer-account" onClick={()=>{setOpen(false);navigate('/profile')}}><span className="avatar"><Avatar/></span><span><b>{name}</b><small>{account?.account_type||'Checking'} · {account?.currency||'USD'}</small></span></button>
      <div className="fncu-drawer-links">
-       <NavLink to="/" onClick={()=>setOpen(false)} className={isActive('/')?'active':''}><Home size={18}/><span>Home</span></NavLink>
+       <NavLink to="/" end onClick={()=>setOpen(false)} className={isActive('/')?'active':''}><Home size={18}/><span>Overview</span></NavLink>
        {sections.map(section=><div className="fncu-drawer-section" key={section.label}><div className="fncu-drawer-section-label">{section.label}</div>{section.items.map(item=><NavLink key={`${section.label}-${item.label}`} to={item.path} onClick={()=>setOpen(false)} className={isActive(item.path.split('?')[0])?'active':''}><item.icon size={17}/><span>{item.label}</span></NavLink>)}</div>)}
      </div>
-     <div className="fncu-drawer-footer"><div className="fncu-drawer-security"><ShieldCheck size={15}/><span>Secure customer access</span></div><small>FOXSYCU DIGITAL BANKING · USD</small><button className="fncu-drawer-signout" onClick={()=>void import('./supabaseClient').then(({supabase})=>supabase.auth.signOut())}><LogOut size={16}/>Sign out</button></div>
+     <div className="fncu-drawer-footer"><div className="fncu-drawer-security"><ShieldCheck size={15}/><span>Secure customer access</span></div><button className="fncu-drawer-signout" onClick={()=>void import('./supabaseClient').then(({supabase})=>supabase.auth.signOut())}><LogOut size={16}/>Sign out</button></div>
    </aside>
    {open&&<button className="fncu-drawer-backdrop" onClick={()=>setOpen(false)} aria-label="Close navigation"/>}
  </div>
