@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, Bell, BriefcaseBusiness, CreditCard, FileText, Home, Landmark, LogOut, MapPin, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
+import { Activity, Bell, BriefcaseBusiness, CreditCard, FileText, Home, Landmark, LogOut, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, Users, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { FNCUWordmark } from './FNCUBrand'
@@ -10,7 +10,7 @@ import './fncu-design-system.css'
 import './fncu-navigation-fixes.css'
 
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
-const nav=[['Home','/',Home],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Services','/services',BriefcaseBusiness],['Profile','/profile',UserRound]] as const
+const nav=[['Home','/',Home],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Profile','/profile',Settings]] as const
 
 type DrawerItem={label:string;path:string;icon:any}
 type DrawerSection={label:string;items:DrawerItem[]}
@@ -22,21 +22,19 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
  const Avatar=()=>avatarUrl?<img className="fncu-avatar-image" src={avatarUrl} alt="" aria-hidden="true"/>:<span>{initials}</span>
  const isActive=(path:string)=>path==='/'?location.pathname==='/':location.pathname.startsWith(path)
  const drawerActive=(path:string)=>{const [pathname,search]=path.split('?');if(location.pathname!==pathname)return false;if(!search)return pathname==='/'?location.pathname==='/':true;return new URLSearchParams(location.search).toString()===search}
- const service=(key:string)=>`/services?service=${key}`
  const sections:DrawerSection[]=[
   {label:'Accounts',items:[]},
   {label:'Transfers',items:[{label:'Transfer money',path:'/transfers',icon:MoveRight},{label:'Transfer history',path:'/transactions',icon:Activity}]},
   {label:'Payments & deposits',items:[
-    {label:'Bill pay',path:service('billpay'),icon:FileText},
     {label:'Pay a person',path:'/transfers?mode=p2p',icon:Users},
     {label:'Account to account',path:'/transfers?mode=internal',icon:Landmark},
     {label:'Send ACH',path:'/transfers?mode=ach',icon:MoveRight},
-    {label:'Remote check deposit',path:service('deposit'),icon:Receipt},
+    {label:'Remote check deposit',path:'/transfers?mode=deposit',icon:Receipt},
   ]},
-  {label:'Statements & alerts',items:[{label:'Statements',path:service('statements'),icon:FileText},{label:'Alerts',path:service('alerts'),icon:Bell},{label:'eNotices',path:service('notices'),icon:FileText},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
-  {label:'Cards & loans',items:[{label:'Debit card',path:'/cards',icon:CreditCard},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness}]},
+  {label:'Account information',items:[{label:'Statements',path:'/transactions?view=statements',icon:FileText},{label:'Alerts',path:'/messages?view=alerts',icon:Bell},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
+  {label:'Cards',items:[{label:'Debit card',path:'/cards',icon:CreditCard}]},
   {label:'Profile & security',items:[{label:'Profile & settings',path:'/profile',icon:Settings},{label:'Beneficiaries',path:'/beneficiaries',icon:Users}]},
-  {label:'Support',items:[{label:'Customer service chat',path:'/messages?view=customer-service',icon:MessageSquare},{label:'Locations & ATMs',path:service('locations'),icon:MapPin}]},
+  {label:'Support',items:[{label:'Customer service chat',path:'/messages?view=customer-service',icon:MessageSquare}]},
  ]
  return <div className="app-shell fncu-reference-app">
    <div className="fncu-reference-device">
@@ -45,7 +43,7 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
       <FNCUWordmark compact/>
       <div className="fncu-header-tools">
         <button className="fncu-header-icon" onClick={()=>setSearchOpen(v=>!v)} aria-label="Search activity"><Search size={18}/></button>
-        <NavLink className="fncu-header-icon" to="/services?service=alerts" aria-label="Alerts"><Bell size={18}/></NavLink>
+        <NavLink className="fncu-header-icon" to="/messages?view=alerts" aria-label="Alerts"><Bell size={18}/></NavLink>
         <button className="fncu-header-profile" onClick={()=>navigate('/profile')} aria-label="Open profile"><span className="avatar"><Avatar/></span></button>
       </div>
     </header>}
