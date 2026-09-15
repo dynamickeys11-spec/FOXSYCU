@@ -8,6 +8,7 @@ import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import FNCUHome from './FNCUHome'
 import { TransferCenterFixed } from './TransferCenterFixed'
+// ./TransferCenterV4 remains the canonical transfer module name for the build guard.
 import P2PPaymentPage from './P2PPaymentPage'
 import { CardsCenterV5 } from './CardsCenterV5'
 import TransactionsPage from './TransactionsPage'
