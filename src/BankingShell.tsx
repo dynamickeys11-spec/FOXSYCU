@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, Bell, BriefcaseBusiness, CreditCard, FileText, Home, Landmark, LogOut, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, Users, X } from 'lucide-react'
+import { Activity, Bell, CreditCard, Home, Landmark, LogOut, Menu, MessageSquare, MoveRight, Receipt, Search, Settings, ShieldCheck, Users, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { FNCUWordmark } from './FNCUBrand'
@@ -23,7 +23,6 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
  const isActive=(path:string)=>path==='/'?location.pathname==='/':location.pathname.startsWith(path)
  const drawerActive=(path:string)=>{const [pathname,search]=path.split('?');if(location.pathname!==pathname)return false;if(!search)return pathname==='/'?location.pathname==='/':true;return new URLSearchParams(location.search).toString()===search}
  const sections:DrawerSection[]=[
-  {label:'Accounts',items:[]},
   {label:'Transfers',items:[{label:'Transfer money',path:'/transfers',icon:MoveRight},{label:'Transfer history',path:'/transactions',icon:Activity}]},
   {label:'Payments & deposits',items:[
     {label:'Pay a person',path:'/transfers?mode=p2p',icon:Users},
@@ -31,7 +30,7 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
     {label:'Send ACH',path:'/transfers?mode=ach',icon:MoveRight},
     {label:'Remote check deposit',path:'/transfers?mode=deposit',icon:Receipt},
   ]},
-  {label:'Account information',items:[{label:'Statements',path:'/transactions?view=statements',icon:FileText},{label:'Alerts',path:'/messages?view=alerts',icon:Bell},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
+  {label:'Account',items:[{label:'Alerts',path:'/messages?view=alerts',icon:Bell},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
   {label:'Cards',items:[{label:'Debit card',path:'/cards',icon:CreditCard}]},
   {label:'Profile & security',items:[{label:'Profile & settings',path:'/profile',icon:Settings},{label:'Beneficiaries',path:'/beneficiaries',icon:Users}]},
   {label:'Support',items:[{label:'Customer service chat',path:'/messages?view=customer-service',icon:MessageSquare}]},
