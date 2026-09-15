@@ -14,9 +14,9 @@ export default function FNCUHome(){
  const recent=useMemo(()=>transactions.slice(0,5).map((t:any)=>({...t,amount:t.direction==='debit'?-Math.abs(Number(t.amount)):Number(t.amount)})),[transactions])
  const actions=[
   {label:'Transfer',icon:MoveRight,to:'/transfers'},
-  {label:'Deposit',icon:Plus,to:'/services?service=deposit'},
-  {label:'Pay',icon:Send,to:'/services?service=billpay'},
-  {label:'Message',icon:MessageSquare,to:'/messages'},
+  {label:'Deposit',icon:Plus,to:'/transfers?mode=deposit'},
+  {label:'Pay',icon:Send,to:'/transfers?mode=p2p'},
+  {label:'Message',icon:MessageSquare,to:'/messages?view=customer-service'},
  ]
  return <BankingShell>
    <div className="fh-reference-home">
@@ -36,7 +36,7 @@ export default function FNCUHome(){
      </section>
 
      <section className="fh-accounts">
-       <div className="fh-section-head"><div><span>SAVINGS</span><h2>Savings balance</h2></div><NavLink to="/services">View services</NavLink></div>
+       <div className="fh-section-head"><div><span>SAVINGS</span><h2>Savings balance</h2></div><NavLink to="/transactions">View activity</NavLink></div>
        <div className="fh-account-row"><span className="fh-account-icon"><WalletCards size={17}/></span><span><b>{vaults.length?`${vaults.length} savings ${vaults.length===1?'account':'accounts'}`:'Savings'}</b><small>USD · total savings</small></span><strong>{visible?money(savings):'••••'}</strong></div>
      </section>
 
