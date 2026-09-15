@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, Bell, CreditCard, Home, Menu, MessageSquare, MoveRight, Search, UserRound, Users, X } from 'lucide-react'
+import { Activity, Bell, BriefcaseBusiness, CreditCard, Home, Menu, MessageSquare, MoveRight, Search, UserRound, Users, X } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { FNCUWordmark } from './FNCUBrand'
@@ -9,7 +9,7 @@ import './fncu-identity.css'
 import './fncu-design-system.css'
 
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
-const nav=[['Home','/',Home],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Cards','/cards',CreditCard],['Profile','/profile',UserRound]] as const
+const nav=[['Home','/',Home],['Activity','/transactions',Activity],['Move','/transfers',MoveRight],['Services','/services',BriefcaseBusiness],['Profile','/profile',UserRound]] as const
 
 export function BankingShell({children,showHeader=true}:{children:React.ReactNode;showHeader?:boolean}){
  const[open,setOpen]=useState(false);const[searchOpen,setSearchOpen]=useState(false);const[query,setQuery]=useState('');const{profile,account,transactions}=useCustomerData();const navigate=useNavigate();const location=useLocation()
@@ -18,7 +18,7 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
  const Avatar=()=>avatarUrl?<img className="fncu-avatar-image" src={avatarUrl} alt="" aria-hidden="true"/>:<span>{initials}</span>
  const isActive=(path:string)=>path==='/'?location.pathname==='/':location.pathname.startsWith(path)
  const drawerLinks=[
-  ['Overview','/',Home],['Transactions','/transactions',Activity],['Money movement','/transfers',MoveRight],['Beneficiaries','/beneficiaries',Users],['Messages','/messages',MessageSquare],['Cards','/cards',CreditCard],['Profile','/profile',UserRound],
+  ['Overview','/',Home],['Transactions','/transactions',Activity],['Money movement','/transfers',MoveRight],['Banking services','/services',BriefcaseBusiness],['Beneficiaries','/beneficiaries',Users],['Messages','/messages',MessageSquare],['Cards','/cards',CreditCard],['Profile','/profile',UserRound],
  ] as const
  return <div className="app-shell fncu-reference-app">
    <div className="fncu-reference-device">
