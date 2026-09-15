@@ -6,6 +6,7 @@ import { FNCUWordmark } from './FNCUBrand'
 import './world-v2.css'
 import './ux-audit.css'
 import './fncu-identity.css'
+import './fncu-design-system.css'
 
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const nav=[['Overview','/',Home],['Accounts','/accounts',Wallet],['Money movement','/transfers',MoveRight],['Beneficiaries','/beneficiaries',Users],['Transactions','/transactions',Activity],['Messages','/messages',Mail],['Savings','/savings',PiggyBank],['Cards','/cards',CreditCard],['Security Center','/security',ShieldCheck],['Settings','/settings',Settings],['Profile','/profile',UserRound]] as const
