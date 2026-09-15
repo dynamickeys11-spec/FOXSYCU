@@ -1,4 +1,4 @@
-/* Desktop banking shell: turns the compact mobile composition into a real desktop workspace. */
+/* Desktop banking shell: use the full monitor as a banking workspace rather than stretching the mobile composition. */
 @media (min-width: 901px){
  .fncu-reference-app{justify-content:stretch!important;overflow:hidden!important;background:#f5f8fb!important}
  .fncu-reference-device{max-width:none!important;width:100%!important;height:100dvh!important;box-shadow:none!important;border:0!important;background:#f5f8fb!important}
@@ -6,7 +6,7 @@
  .fncu-mobile-header>.fncu-wordmark{display:none!important}
  .fncu-menu-button{display:none!important}
  .fncu-header-tools{gap:8px!important}
- .fncu-reference-content{padding:0 0 30px!important;background:#f5f8fb!important}
+ .fncu-reference-content{padding:0 0 30px!important;background:#f5f8fb!important;overflow:auto!important}
  .fncu-reference-content>*{max-width:none!important}
  .fncu-reference-nav{display:none!important}
  .fncu-reference-drawer{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:248px!important;transform:none!important;z-index:80!important;border:0!important;border-right:1px solid #dfe6ee!important;border-radius:0!important;box-shadow:none!important;padding:22px 14px!important;overflow:auto!important;background:#fff!important}
@@ -16,14 +16,28 @@
  .fncu-drawer-links a{height:42px!important;font-size:11px!important;border-radius:8px!important}
  .fncu-drawer-section{margin-top:16px!important}
  .fncu-drawer-section-label{font-size:8px!important;padding-bottom:7px!important}
- .fncu-reference-content .fh-reference-home{max-width:1180px!important;margin:0 auto!important;padding:40px 54px 52px!important}
- .fncu-balance-card,.fh-balance-card{min-height:250px!important}
- .fh-balance-carousel{max-width:860px!important}
- .fh-actions{max-width:860px!important}
+ .fncu-reference-content .fh-reference-home{max-width:1440px!important;margin:0 auto!important;padding:38px 56px 64px!important}
+ .fh-topline{margin-bottom:26px!important}
+ .fh-balance-carousel{max-width:none!important;width:100%!important}
+ .fh-balance-track{display:flex!important;transform:none!important;gap:18px!important;overflow:visible!important}
+ .fh-balance-card{flex:1 1 0!important;min-width:0!important;min-height:230px!important}
+ .fh-balance-card:nth-child(n+3){display:none!important}
+ .fh-carousel-controls{display:none!important}
+ .fh-actions{max-width:none!important;width:100%!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:12px!important;margin-top:18px!important}
+ .fh-action{min-height:78px!important}
+ .fh-accounts,.fh-activity{max-width:none!important}
+ .fh-accounts{margin-top:26px!important}
+ .fh-activity{margin-top:22px!important}
+ .fb-page{max-width:1440px!important;margin:0 auto!important;padding:38px 56px 64px!important}
+ .fb-grid{grid-template-columns:minmax(0,1.25fr) minmax(360px,.75fr)!important;align-items:start!important}
+ .fb-heading-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin-bottom:18px!important}
 }
 @media (min-width:1300px){
  .fncu-mobile-header{padding-left:292px!important;padding-right:42px!important}
- .fncu-reference-content .fh-reference-home{max-width:1280px!important;padding-left:72px!important;padding-right:72px!important}
- .fh-balance-carousel{max-width:900px!important}
- .fh-actions{max-width:900px!important}
+ .fncu-reference-content .fh-reference-home{padding-left:76px!important;padding-right:76px!important}
+ .fb-page{padding-left:76px!important;padding-right:76px!important}
+}
+@media (max-width:900px){
+ .fb-heading-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+ .fb-heading-actions .fb-btn{flex:0 0 auto}
 }
