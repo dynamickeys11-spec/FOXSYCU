@@ -1,0 +1,10 @@
+import { useState } from 'react'
+import { KeyRound } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from './supabaseClient'
+
+export default function AdminPasswordChangePage(){
+ const navigate=useNavigate();const[next,setNext]=useState('');const[confirm,setConfirm]=useState('');const[error,setError]=useState('');const[busy,setBusy]=useState(false)
+ const submit=async(e:React.FormEvent)=>{e.preventDefault();setError('');if(next.length<10){setError('Choose a password with at least 10 characters.');return}if(next!==confirm){setError('The passwords do not match.');return}setBusy(true);const{error:updateError}=await supabase.auth.updateUser({password:next});if(updateError){setError(updateError.message);setBusy(false);return}const{error:clearError}=await supabase.rpc('admin_clear_password_change');if(clearError){setError('Your password changed, but the first-login security flag could not be cleared. Please contact support.');setBusy(false);return}navigate('/admin',{replace:true});setBusy(false)}
+ return <main className="admin-login-page"><section className="admin-login-panel"><div className="admin-login-brand"><span><KeyRound size={18}/></span><div><strong>FNCU</strong><small>ADMINISTRATION</small></div></div><div className="admin-login-copy"><div className="admin-login-kicker">FIRST LOGIN SECURITY</div><h1>Create your new password</h1><p>The temporary administrator password can only be used for the first sign-in. Set a private password before entering the administration console.</p></div><form onSubmit={submit} className="admin-login-form"><label>New password<input type="password" value={next} onChange={e=>setNext(e.target.value)} autoComplete="new-password" required/></label><label>Confirm new password<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password" required/></label>{error&&<div className="admin-login-error" role="alert">{error}</div>}<button className="admin-login-submit" disabled={busy}>{busy?'Updating…':'Set password & continue'}</button></form></section></main>
+}
