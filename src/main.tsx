@@ -6,6 +6,7 @@ import ResetPasswordPage from './ResetPasswordPage'
 import { MFAChallenge } from './MFAChallenge'
 import { CustomerProvider, useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
+import CanonicalLedgerApp from './CanonicalLedgerApp'
 import FNCUHome from './FNCUHome'
 import { TransferCenterV4 } from './TransferCenterV4'
 import { CardsCenterV5 } from './CardsCenterV5'
@@ -25,6 +26,8 @@ import './receipt-presentation.css'
 import './polish.css'
 import './avatar-fix.css'
 import './responsive-platform.css'
+
+void CanonicalLedgerApp
 
 function useMfaGate(session: any) {
   const [ready, setReady] = useState(false); const [needs, setNeeds] = useState(false)
