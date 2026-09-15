@@ -25,7 +25,13 @@ export function BankingShell({children,showHeader=true}:{children:React.ReactNod
  const sections:DrawerSection[]=[
   {label:'Accounts',items:[{label:'Account overview',path:'/',icon:Landmark}]},
   {label:'Transfers',items:[{label:'Transfer money',path:'/transfers',icon:MoveRight},{label:'Transfer history',path:'/transactions',icon:Activity}]},
-  {label:'Payments & deposits',items:[{label:'Bill pay',path:service('billpay'),icon:FileText},{label:'Pay a person',path:service('p2p'),icon:Users},{label:'Account to account',path:service('a2a'),icon:Landmark},{label:'Send ACH',path:service('ach'),icon:MoveRight},{label:'Remote check deposit',path:service('deposit'),icon:Receipt}]},
+  {label:'Payments & deposits',items:[
+    {label:'Bill pay',path:service('billpay'),icon:FileText},
+    {label:'Pay a person',path:'/transfers?mode=zelle_like',icon:Users},
+    {label:'Account to account',path:'/transfers?mode=internal',icon:Landmark},
+    {label:'Send ACH',path:'/transfers?mode=ach',icon:MoveRight},
+    {label:'Remote check deposit',path:service('deposit'),icon:Receipt},
+  ]},
   {label:'Statements & alerts',items:[{label:'Statements',path:service('statements'),icon:FileText},{label:'Alerts',path:service('alerts'),icon:Bell},{label:'eNotices',path:service('notices'),icon:FileText},{label:'Secure messages',path:'/messages',icon:MessageSquare}]},
   {label:'Cards & loans',items:[{label:'Credit card',path:'/cards',icon:CreditCard},{label:'Loans',path:service('loans'),icon:BriefcaseBusiness}]},
   {label:'Profile & security',items:[{label:'Profile & settings',path:'/profile',icon:Settings},{label:'Beneficiaries',path:'/beneficiaries',icon:Users}]},
