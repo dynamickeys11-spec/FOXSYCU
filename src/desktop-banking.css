@@ -1,0 +1,29 @@
+/* Desktop banking shell: turns the compact mobile composition into a real desktop workspace. */
+@media (min-width: 901px){
+ .fncu-reference-app{justify-content:stretch!important;overflow:hidden!important;background:#f5f8fb!important}
+ .fncu-reference-device{max-width:none!important;width:100%!important;height:100dvh!important;box-shadow:none!important;border:0!important;background:#f5f8fb!important}
+ .fncu-mobile-header{height:72px;min-height:72px;padding:0 34px 0 292px!important;grid-template-columns:1fr auto!important;border-bottom:1px solid #dfe6ee!important;background:#fff!important;z-index:25!important}
+ .fncu-mobile-header>.fncu-wordmark{display:none!important}
+ .fncu-menu-button{display:none!important}
+ .fncu-header-tools{gap:8px!important}
+ .fncu-reference-content{padding:0 0 30px!important;background:#f5f8fb!important}
+ .fncu-reference-content>*{max-width:none!important}
+ .fncu-reference-nav{display:none!important}
+ .fncu-reference-drawer{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:248px!important;transform:none!important;z-index:80!important;border:0!important;border-right:1px solid #dfe6ee!important;border-radius:0!important;box-shadow:none!important;padding:22px 14px!important;overflow:auto!important;background:#fff!important}
+ .fncu-drawer-head{padding:0 8px 22px!important}
+ .fncu-drawer-head .fncu-header-icon{display:none!important}
+ .fncu-drawer-account{margin-bottom:20px!important}
+ .fncu-drawer-links a{height:42px!important;font-size:11px!important;border-radius:8px!important}
+ .fncu-drawer-section{margin-top:16px!important}
+ .fncu-drawer-section-label{font-size:8px!important;padding-bottom:7px!important}
+ .fncu-reference-content .fh-reference-home{max-width:1180px!important;margin:0 auto!important;padding:40px 54px 52px!important}
+ .fncu-balance-card,.fh-balance-card{min-height:250px!important}
+ .fh-balance-carousel{max-width:860px!important}
+ .fh-actions{max-width:860px!important}
+}
+@media (min-width:1300px){
+ .fncu-mobile-header{padding-left:292px!important;padding-right:42px!important}
+ .fncu-reference-content .fh-reference-home{max-width:1280px!important;padding-left:72px!important;padding-right:72px!important}
+ .fh-balance-carousel{max-width:900px!important}
+ .fh-actions{max-width:900px!important}
+}
