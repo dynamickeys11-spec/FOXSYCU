@@ -33,6 +33,7 @@ import './avatar-fix.css'
 import './responsive-platform.css'
 import './check-deposit.css'
 import './admin-login.css'
+import './desktop-banking.css'
 
 function useMfaGate(session: any) { const [ready,setReady]=useState(false);const[needs,setNeeds]=useState(false);useEffect(()=>{let active=true;const check=async()=>{if(!session){setReady(false);setNeeds(false);return};const{data,error}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();if(!active)return;if(error||data.nextLevel!=='aal2'||data.currentLevel==='aal2'){setNeeds(false);setReady(true);return}const token=sessionStorage.getItem('foxsycu.mfa.recovery.grant');if(token){const{data:grant}=await supabase.rpc('has_mfa_recovery_grant',{p_grant_token:token});if(grant?.valid){setNeeds(false);setReady(true);return}sessionStorage.removeItem('foxsycu.mfa.recovery.grant')}setNeeds(true);setReady(true)};void check();return()=>{active=false}},[session]);return{ready,needs,setNeeds}}
 function Loading(){return <main className="fncu-loading" aria-label="Loading FNCU account"><div className="fncu-loading-card"><FNCUWordmark/><div className="fncu-loading-spinner" aria-hidden="true"/><p className="fncu-loading-copy">Loading your secure account…</p><p className="fncu-loading-note">FNCU SECURE ACCESS</p></div></main>}
