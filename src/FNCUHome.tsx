@@ -7,16 +7,17 @@ import './fncu-home.css'
 
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const shortDate=(value:string)=>{const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+const getGreeting=()=>{const hour=new Date().getHours();if(hour<12)return 'Good morning';if(hour<18)return 'Good afternoon';return 'Good evening'}
 
 export default function FNCUHome(){
  const{account,vaults,profile,transactions}=useCustomerData();const navigate=useNavigate();const[visible,setVisible]=useState(true);const[slide,setSlide]=useState(0);const touchStart=useRef<number|null>(null)
- const name=profile?.preferred_name||profile?.full_name||'Customer';const first=name.split(/\s+/)[0];const balance=Number(account?.available_balance||0);const savings=vaults.reduce((sum,v)=>sum+Number(v.balance||0),0);const cardCount=2+vaults.length
+ const name=profile?.preferred_name||profile?.full_name||'Customer';const first=name.split(/\s+/)[0];const greeting=getGreeting();const balance=Number(account?.available_balance||0);const savings=vaults.reduce((sum,v)=>sum+Number(v.balance||0),0);const cardCount=2+vaults.length
  const recent=useMemo(()=>transactions.slice(0,5).map((t:any)=>({...t,amount:t.direction==='debit'?-Math.abs(Number(t.amount)):Number(t.amount)})),[transactions])
  const actions=[{label:'Transfer',icon:MoveRight,to:'/transfers'},{label:'Deposit',icon:Plus,to:'/deposit'},{label:'Pay',icon:Send,to:'/bills'},{label:'Bills',icon:Receipt,to:'/bills'},{label:'Message',icon:MessageSquare,to:'/messages?view=customer-service'}]
  const showSlide=(next:number)=>setSlide(Math.max(0,Math.min(cardCount-1,next)))
  return <BankingShell>
    <div className="fh-reference-home">
-     <header className="fh-topline"><div><span>Account overview</span><h1>Good morning, {first}</h1></div></header>
+     <header className="fh-topline"><div><span>Account overview</span><h1>{greeting}, {first}</h1></div></header>
      <section className="fh-balance-carousel" aria-label="Accounts overview" onTouchStart={e=>{touchStart.current=e.changedTouches[0]?.clientX??null}} onTouchEnd={e=>{if(touchStart.current==null)return;const delta=e.changedTouches[0]?.clientX-touchStart.current;if(Math.abs(delta)>45)showSlide(slide+(delta<0?1:-1));touchStart.current=null}}>
        <div className="fh-balance-track" style={{transform:`translateX(-${slide*100}%)`}}>
          <article className="fh-balance-card"><div className="fh-card-top"><div><span>CHECKING</span><small>USD · AVAILABLE BALANCE</small></div><button onClick={()=>setVisible(v=>!v)} aria-label={visible?'Hide balance':'Show balance'}>{visible?<Eye size={17}/>:<EyeOff size={17}/>}</button></div><strong>{visible?money(balance):'••••••••'}</strong><div className="fh-account-meta"><span>Available</span><span>•••• {account?.account_number_last4||'----'}</span></div><div className="fh-account-foot"><span>Posted {visible?money(Number(account?.posted_balance||balance)):'••••'}</span><span>USD</span></div></article>
