@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, Eye, EyeOff, MessageSquare, MoveRight, Plus, Send, WalletCards } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { ArrowDownLeft, ArrowUpRight, Eye, EyeOff, MessageSquare, MoveRight, Plus, Receipt, Send, WalletCards } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { BankingShell } from './BankingShell'
@@ -9,20 +9,21 @@ const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{min
 const shortDate=(value:string)=>{const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 
 export default function FNCUHome(){
- const{account,vaults,profile,transactions}=useCustomerData();const navigate=useNavigate();const[visible,setVisible]=useState(true);const[slide,setSlide]=useState(0)
- const name=profile?.preferred_name||profile?.full_name||'Customer';const first=name.split(/\s+/)[0];const balance=Number(account?.available_balance||0);const savings=vaults.reduce((sum,v)=>sum+Number(v.balance||0),0)
+ const{account,vaults,profile,transactions}=useCustomerData();const navigate=useNavigate();const[visible,setVisible]=useState(true);const[slide,setSlide]=useState(0);const touchStart=useRef<number|null>(null)
+ const name=profile?.preferred_name||profile?.full_name||'Customer';const first=name.split(/\s+/)[0];const balance=Number(account?.available_balance||0);const savings=vaults.reduce((sum,v)=>sum+Number(v.balance||0),0);const cardCount=2+vaults.length
  const recent=useMemo(()=>transactions.slice(0,5).map((t:any)=>({...t,amount:t.direction==='debit'?-Math.abs(Number(t.amount)):Number(t.amount)})),[transactions])
- const actions=[{label:'Transfer',icon:MoveRight,to:'/transfers'},{label:'Deposit',icon:Plus,to:'/deposit'},{label:'Pay',icon:Send,to:'/bills'},{label:'Message',icon:MessageSquare,to:'/messages?view=customer-service'}]
+ const actions=[{label:'Transfer',icon:MoveRight,to:'/transfers'},{label:'Deposit',icon:Plus,to:'/deposit'},{label:'Pay',icon:Send,to:'/bills'},{label:'Bills',icon:Receipt,to:'/bills'},{label:'Message',icon:MessageSquare,to:'/messages?view=customer-service'}]
+ const showSlide=(next:number)=>setSlide(Math.max(0,Math.min(cardCount-1,next)))
  return <BankingShell>
    <div className="fh-reference-home">
      <header className="fh-topline"><div><span>Account overview</span><h1>Good morning, {first}</h1></div></header>
-     <section className="fh-balance-carousel" aria-label="Accounts overview">
+     <section className="fh-balance-carousel" aria-label="Accounts overview" onTouchStart={e=>{touchStart.current=e.changedTouches[0]?.clientX??null}} onTouchEnd={e=>{if(touchStart.current==null)return;const delta=e.changedTouches[0]?.clientX-touchStart.current;if(Math.abs(delta)>45)showSlide(slide+(delta<0?1:-1));touchStart.current=null}}>
        <div className="fh-balance-track" style={{transform:`translateX(-${slide*100}%)`}}>
          <article className="fh-balance-card"><div className="fh-card-top"><div><span>CHECKING</span><small>USD · AVAILABLE BALANCE</small></div><button onClick={()=>setVisible(v=>!v)} aria-label={visible?'Hide balance':'Show balance'}>{visible?<Eye size={17}/>:<EyeOff size={17}/>}</button></div><strong>{visible?money(balance):'••••••••'}</strong><div className="fh-account-meta"><span>Available</span><span>•••• {account?.account_number_last4||'----'}</span></div><div className="fh-account-foot"><span>Posted {visible?money(Number(account?.posted_balance||balance)):'••••'}</span><span>USD</span></div></article>
          <article className="fh-balance-card fh-savings-card"><div className="fh-card-top"><div><span>SAVINGS</span><small>USD · TOTAL SAVINGS</small></div><WalletCards size={19}/></div><strong>{visible?money(savings):'••••••••'}</strong><div className="fh-account-meta"><span>{vaults.length?`${vaults.length} savings ${vaults.length===1?'account':'accounts'}`:'Savings'}</span><span>USD</span></div><div className="fh-account-foot"><span>Available savings</span><span>USD</span></div></article>
          {vaults.map((v:any)=><article className="fh-balance-card fh-savings-card" key={v.id}><div className="fh-card-top"><div><span>SAVINGS</span><small>{String(v.name||'Savings').toUpperCase()}</small></div><WalletCards size={19}/></div><strong>{visible?money(Number(v.balance||0)):'••••••••'}</strong><div className="fh-account-meta"><span>Available balance</span><span>USD</span></div><div className="fh-account-foot"><span>{v.apy?`${Number(v.apy).toFixed(2)}% APY`:'Savings account'}</span><span>USD</span></div></article>)}
        </div>
-       <div className="fh-carousel-controls" aria-label="Account cards"><div className="fh-carousel-dots">{Array.from({length:2+vaults.length}).map((_,i)=><button key={i} className={slide===i?'active':''} onClick={()=>setSlide(i)} aria-label={`Show account ${i+1}`}/>)}</div><span>Swipe to view accounts</span></div>
+       <div className="fh-carousel-controls" aria-label="Account cards"><div className="fh-carousel-dots">{Array.from({length:cardCount}).map((_,i)=><button key={i} className={slide===i?'active':''} onClick={()=>showSlide(i)} aria-label={`Show account ${i+1}`}/>)}</div><span>Swipe or select an account</span></div>
      </section>
      <section className="fh-actions" aria-label="Primary banking actions">{actions.map(({label,icon:Icon,to})=><NavLink key={label} to={to} className="fh-action"><span><Icon size={18}/></span><b>{label}</b></NavLink>)}</section>
      <section className="fh-accounts"><div className="fh-section-head"><div><span>SAVINGS</span><h2>Savings balance</h2></div><NavLink to="/transactions">View activity</NavLink></div><div className="fh-account-row"><span className="fh-account-icon"><WalletCards size={17}/></span><span><b>{vaults.length?`${vaults.length} savings ${vaults.length===1?'account':'accounts'}`:'Savings'}</b><small>USD · total savings</small></span><strong>{visible?money(savings):'••••'}</strong></div></section>
