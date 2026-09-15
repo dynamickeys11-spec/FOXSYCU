@@ -1,0 +1,4 @@
+/* FNCU navigation corrections: hamburger follows the reference pattern and opens from the left. */
+.fncu-reference-drawer{left:0!important;right:auto!important;transform:translateX(-105%)!important;box-shadow:18px 0 42px rgba(28,56,84,.16)!important;border-left:0!important;border-right:1px solid #e0e7ef!important}
+.fncu-reference-drawer.open{transform:translateX(0)!important}
+@media(min-width:700px){.fncu-reference-drawer{top:14px!important;bottom:14px!important;border-radius:0 16px 16px 0!important}}
