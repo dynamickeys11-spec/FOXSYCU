@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, CreditCard, Eye, EyeOff, MessageSquare, MoveRight, Plus, Send } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Eye, EyeOff, MessageSquare, MoveRight, Plus, Send, WalletCards } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { BankingShell } from './BankingShell'
@@ -37,9 +37,8 @@ export default function FNCUHome(){
      </section>
 
      <section className="fh-accounts">
-       <div className="fh-section-head"><div><span>YOUR ACCOUNTS</span><h2>Money at a glance</h2></div></div>
-       <div className="fh-account-row"><span className="fh-account-icon"><CreditCard size={17}/></span><span><b>{account?.account_name||'Checking'}</b><small>USD · •••• {account?.account_number_last4||'----'}</small></span><strong>{visible?money(balance):'••••'}</strong></div>
-       <div className="fh-account-row"><span className="fh-account-icon"><Plus size={17}/></span><span><b>Savings</b><small>{vaults.length} savings {vaults.length===1?'vault':'vaults'}</small></span><strong>{visible?money(savings):'••••'}</strong></div>
+       <div className="fh-section-head"><div><span>SAVINGS</span><h2>Savings at a glance</h2></div><NavLink to="/transfers">Manage</NavLink></div>
+       <div className="fh-account-row"><span className="fh-account-icon"><WalletCards size={17}/></span><span><b>{vaults.length?`${vaults.length} savings ${vaults.length===1?'vault':'vaults'}`:'Savings'}</b><small>USD · total savings</small></span><strong>{visible?money(savings):'••••'}</strong></div>
      </section>
 
      <section className="fh-activity">
