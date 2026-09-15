@@ -1,44 +1,56 @@
 import { useMemo, useState } from 'react'
-import { ArrowDownToLine, ArrowUpRight, CreditCard, Eye, EyeOff, MessageSquare, MoreHorizontal, PiggyBank, Search, Send, WalletCards } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays, Eye, EyeOff, FileText, WalletCards } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useCustomerData } from './CustomerProvider'
 import { BankingShell } from './BankingShell'
 import './fncu-home.css'
 
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
-const formatDate=(value:string)=>{const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+const shortDate=(value:string)=>{const d=new Date(value);return Number.isNaN(d.getTime())?value:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 
 export default function FNCUHome(){
- const{account,vaults,profile,transactions}=useCustomerData();const navigate=useNavigate();const[visible,setVisible]=useState(true);const[query,setQuery]=useState('')
- const name=profile?.preferred_name||profile?.full_name||'Customer';const first=name.split(/\s+/)[0];const savings=vaults.reduce((sum,v)=>sum+Number(v.balance||0),0)
- const data=useMemo(()=>transactions.slice(0,8).map((t:any)=>({...t,amount:t.direction==='debit'?-Math.abs(Number(t.amount)):Number(t.amount)})),[transactions])
- const filtered=useMemo(()=>data.filter((t:any)=>`${t.description||''} ${t.counterparty||''} ${t.reference||''}`.toLowerCase().includes(query.toLowerCase())),[data,query])
- const balance=Number(account?.available_balance||0)
- return <BankingShell><div className="fh-home">
-   <section className="fh-greeting"><div><span>PERSONAL BANKING</span><h1>Hello, {first}</h1><p>Good to see you again.</p></div><button className="fh-more" onClick={()=>navigate('/profile')} aria-label="Profile"><MoreHorizontal size={20}/></button></section>
+ const{account,vaults,profile,transactions}=useCustomerData();const navigate=useNavigate();const[visible,setVisible]=useState(true)
+ const name=profile?.preferred_name||profile?.full_name||'Customer';const first=name.split(/\s+/)[0];const balance=Number(account?.available_balance||0);const savings=vaults.reduce((sum,v)=>sum+Number(v.balance||0),0)
+ const recent=useMemo(()=>transactions.slice(0,5).map((t:any)=>({...t,amount:t.direction==='debit'?-Math.abs(Number(t.amount)):Number(t.amount)})),[transactions])
+ const quick=[
+  {label:'Analyze',icon:BarChart3,to:'/accounts'},
+  {label:'Calendar',icon:CalendarDays,to:'/transactions'},
+  {label:'Document',icon:FileText,to:'/statements'},
+  {label:'Collect',icon:WalletCards,to:'/savings'},
+ ]
+ return <BankingShell showHeader={false}>
+   <div className="fh-reference-home">
+     <header className="fh-topline">
+       <div><span>Hello,</span><h1>{first}</h1></div>
+       <button className="fh-profile-dot" onClick={()=>navigate('/profile')} aria-label="Open profile"><span>{name.split(/\s+/).map((p:string)=>p[0]).join('').slice(0,2).toUpperCase()}</span></button>
+     </header>
 
-   <section className="fh-primary-card" aria-label="Primary account">
-     <div className="fh-card-top"><div><span>AVAILABLE BALANCE</span><button className="fh-eye" onClick={()=>setVisible(v=>!v)} aria-label={visible?'Hide balance':'Show balance'}>{visible?<Eye size={17}/>:<EyeOff size={17}/>}</button></div><b>USD</b></div>
-     <strong>{visible?money(balance):'••••••••'}</strong>
-     <div className="fh-card-meta"><span>{account?.account_name||'Checking Account'}</span><span>•••• {account?.account_number_last4||'----'}</span></div>
-     <div className="fh-card-rule"/>
-     <div className="fh-card-bottom"><span>FNCU</span><small>FIRST NATIONAL CREDIT UNION</small><WalletCards size={20}/></div>
-   </section>
+     <section className="fh-balance-card" aria-label="FNCU account balance">
+       <div className="fh-card-brand"><span>FNCU</span><small>FIRST NATIONAL CREDIT UNION</small></div>
+       <div className="fh-card-label">Available balance <button onClick={()=>setVisible(v=>!v)} aria-label={visible?'Hide balance':'Show balance'}>{visible?<Eye size={16}/>:<EyeOff size={16}/>}</button></div>
+       <strong>{visible?money(balance):'••••••••'}</strong>
+       <div className="fh-card-number">•••• {account?.account_number_last4||'----'} <span>USD</span></div>
+       <div className="fh-card-footer"><span>{account?.account_name||'Checking Account'}</span><b>FNCU</b></div>
+     </section>
 
-   <section className="fh-quick"><div className="fh-section-title"><h2>Quick actions</h2><NavLink to="/transfers">View all</NavLink></div><div className="fh-action-grid">
-     <NavLink to="/transfers" className="fh-action"><span><Send/></span><b>Transfer</b></NavLink>
-     <NavLink to="/transfers?mode=deposit" className="fh-action"><span><ArrowDownToLine/></span><b>Deposit</b></NavLink>
-     <NavLink to="/cards" className="fh-action"><span><CreditCard/></span><b>Cards</b></NavLink>
-     <NavLink to="/messages" className="fh-action"><span><MessageSquare/></span><b>Message</b></NavLink>
-   </div></section>
+     <section className="fh-quick-strip" aria-label="Banking shortcuts">
+       {quick.map(({label,icon:Icon,to})=><NavLink key={label} to={to} className="fh-quick-item"><span><Icon size={18}/></span><b>{label}</b></NavLink>)}
+     </section>
 
-   <section className="fh-accounts"><div className="fh-section-title"><h2>My accounts</h2><NavLink to="/accounts">See all</NavLink></div><div className="fh-account-row">
-     <NavLink to="/accounts" className="fh-mini-account"><span className="fh-mini-icon"><WalletCards size={18}/></span><div><b>Checking</b><small>•••• {account?.account_number_last4||'----'}</small></div><strong>{visible?money(balance):'••••'}</strong></NavLink>
-     <NavLink to="/savings" className="fh-mini-account"><span className="fh-mini-icon"><PiggyBank size={18}/></span><div><b>Savings</b><small>{vaults.length} {vaults.length===1?'vault':'vaults'}</small></div><strong>{visible?money(savings):'••••'}</strong></NavLink>
-   </div></section>
+     <section className="fh-activity">
+       <div className="fh-section-head"><div><span>ACTIVITY</span><h2>Transaction details</h2></div><NavLink to="/transactions">View all</NavLink></div>
+       <div className="fh-activity-list">
+         {recent.map((t:any)=><button className="fh-activity-row" key={t.id} onClick={()=>navigate('/transactions')}>
+           <span className={`fh-tx-badge ${t.amount>=0?'in':'out'}`}>{t.amount>=0?<ArrowDownLeft size={16}/>:<ArrowUpRight size={16}/>}</span>
+           <span className="fh-tx-main"><b>{t.description||t.counterparty||'Account activity'}</b><small>{shortDate(t.date||t.created_at||'')} · {t.account_name||'Checking'}</small></span>
+           <strong className={t.amount>=0?'positive':''}>{t.amount>=0?'+':''}{money(t.amount)}</strong>
+         </button>)}
+         {!recent.length&&<div className="fh-empty">No transaction activity.</div>}
+       </div>
+     </section>
 
-   <section className="fh-transactions"><div className="fh-section-title fh-tx-title"><div><h2>Recent transactions</h2><p>Your latest account activity</p></div><NavLink to="/transactions">See all</NavLink></div><div className="fh-tx-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search transactions"/></div><div className="fh-tx-list">{filtered.slice(0,6).map((t:any)=><button className="fh-tx-row" key={t.id} onClick={()=>navigate('/transactions')}><span className={`fh-tx-icon ${t.amount>=0?'credit':'debit'}`}>{t.amount>=0?<ArrowDownToLine size={16}/>:<ArrowUpRight size={16}/>}</span><span className="fh-tx-copy"><b>{t.description||t.counterparty||'Account activity'}</b><small>{formatDate(t.date||t.created_at||'')} · {t.account_name||'Checking'}</small></span><span className={`fh-tx-amount ${t.amount>=0?'credit':''}`}>{t.amount>=0?'+':''}{money(t.amount)}</span></button>)}{!filtered.length&&<div className="fh-empty">No transactions found.</div>}</div></section>
-
-   <div className="fh-demo-note">FNCU DIGITAL BANKING · USD ACCOUNT · SYNTHETIC DEMO</div>
- </div></BankingShell>
+     <section className="fh-balance-line"><span>Savings balance</span><b>{visible?money(savings):'••••'}</b></section>
+     <div className="fh-demo-note">FNCU DIGITAL BANKING · USD ACCOUNT · SYNTHETIC DEMO</div>
+   </div>
+ </BankingShell>
 }
