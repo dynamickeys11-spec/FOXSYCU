@@ -1,8 +1,9 @@
 import React from 'react'
+import logoUrl from './fncu-logo.svg'
 
-/** FNCU wordmark used throughout the customer banking experience. */
+/** Canonical First Nebraska Credit Union logo used across customer and administration surfaces. */
 export function FNCUWordmark({compact=false,className=''}:{compact?:boolean;className?:string}){
-  return <div className={`fncu-wordmark ${compact?'compact':''} ${className}`.trim()} aria-label="FNCU">
-    <span className="fncu-wordmark-copy"><b>FNCU</b></span>
-  </div>
+  return <span className={`fncu-wordmark ${compact?'compact':''} ${className}`.trim()} aria-label="First Nebraska Credit Union">
+    <img src={logoUrl} alt="First Nebraska Credit Union" className="fncu-logo-image" draggable={false}/>
+  </span>
 }
