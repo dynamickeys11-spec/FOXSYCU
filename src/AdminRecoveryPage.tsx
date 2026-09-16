@@ -3,6 +3,7 @@ import { Eye, EyeOff, KeyRound } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import './admin.css'
+import './admin-recovery.css'
 
 export default function AdminRecoveryPage(){
  const navigate=useNavigate();const location=useLocation();const params=new URLSearchParams(location.search);const presetUserId=params.get('user_id')||''
