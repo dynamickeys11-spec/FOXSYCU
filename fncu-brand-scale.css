@@ -1,0 +1,16 @@
+/* Canonical FNCU logo placement and proportion layer. */
+.fncu-wordmark{width:190px;flex:0 0 auto;display:flex;align-items:center;line-height:0}
+.fncu-wordmark.compact{width:150px}
+.fncu-logo-image{display:block;width:100%;height:auto;max-width:100%;object-fit:contain}
+.welcome-brand{align-items:flex-start}
+.welcome-brand .fncu-wordmark{width:min(250px,82vw);justify-content:flex-start}
+.fncu-mobile-header .fncu-wordmark{width:150px}
+.fncu-drawer-head .fncu-wordmark{width:150px}
+.admin-login-brand .fncu-wordmark{width:min(260px,100%)}
+.fncu-loading{position:fixed!important;inset:0!important;background:#fff!important}
+.fncu-loading:before{display:none!important;content:none!important}
+.fncu-loading-card{width:100%!important;min-height:100%!important;background:#fff!important}
+.fncu-loading-logo{display:block;width:min(520px,82vw);max-width:calc(100vw - 40px);height:auto;object-fit:contain}
+.cv5-fncu-card-brand,.cv5-fncu-detail-brand{background:none}
+@media(max-width:900px){.fncu-mobile-header .fncu-wordmark{width:138px}.fncu-drawer-head .fncu-wordmark{width:138px}}
+@media(max-width:560px){.welcome-brand .fncu-wordmark{width:min(230px,86vw)}.fncu-mobile-header .fncu-wordmark{width:128px}.fncu-drawer-head .fncu-wordmark{width:128px}.fncu-loading-logo{width:min(430px,88vw);max-width:calc(100vw - 32px)}}
