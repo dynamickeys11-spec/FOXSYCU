@@ -1,1 +1,0 @@
-Production deployment trigger for canonical customer identity and mockData banking build.
