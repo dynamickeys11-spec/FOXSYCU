@@ -1,6 +1,7 @@
 import React from 'react'
 import logoUrl from './fncu-logo.svg'
 import './fncu-logo-overrides.css'
+import './fncu-brand-scale.css'
 
 /** Canonical First Nebraska Credit Union logo used across customer and administration surfaces. */
 export function FNCUWordmark({compact=false,className=''}:{compact?:boolean;className?:string}){
