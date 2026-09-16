@@ -1,0 +1,10 @@
+/* Full-screen loading presentation: white canvas, one canonical supplied logo, responsive without distortion. */
+.fncu-loading{position:fixed;inset:0;width:100vw;min-height:100dvh;height:100dvh;background:#fff!important;color:#111;display:grid;place-items:center;overflow:hidden;z-index:99999;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.fncu-loading-card{width:100%;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;text-align:center;background:#fff}
+.fncu-loading .fncu-loading-logo{display:block;width:min(680px,86vw);max-width:calc(100vw - 40px);height:auto;object-fit:contain}
+.fncu-loading-spinner{width:24px;height:24px;margin-top:44px;border:2px solid #e4e7ec;border-top-color:#155eef;border-radius:50%;animation:fncu-loading-spin .8s linear infinite}
+.fncu-loading-copy{margin:14px 0 0;font-size:12px;line-height:1.5;font-weight:500;color:#344054}
+.fncu-loading-note{margin:6px 0 0;font-size:8px;line-height:1.4;letter-spacing:.16em;font-weight:700;color:#98a2b3}
+@keyframes fncu-loading-spin{to{transform:rotate(360deg)}}
+@media(max-width:560px){.fncu-loading-card{padding:24px 16px}.fncu-loading .fncu-loading-logo{width:min(560px,88vw);max-width:calc(100vw - 32px)}.fncu-loading-spinner{margin-top:32px;width:22px;height:22px}.fncu-loading-copy{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.fncu-loading-spinner{animation:none}}
