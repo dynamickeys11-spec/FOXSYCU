@@ -2,10 +2,10 @@ import React from 'react'
 import './fncu-logo-overrides.css'
 import './fncu-brand-scale.css'
 
-/** Compatibility component retained for existing imports; renders the current FOXSYCU identity. */
+/** Canonical FNCU brand wordmark used across customer and administration interfaces. */
 export function FNCUWordmark({compact=false,className=''}:{compact?:boolean;className?:string}){
-  return <span className={`fncu-wordmark foxsycu-wordmark ${compact?'compact':''} ${className}`.trim()} aria-label="FOXSYCU">
-    <strong>FOXSYCU</strong>
+  return <span className={`fncu-wordmark ${compact?'compact':''} ${className}`.trim()} aria-label="FNCU">
+    <strong>FNCU</strong>
     {!compact&&<small>DIGITAL BANKING SYSTEM</small>}
   </span>
 }
