@@ -7,7 +7,7 @@ import { supabase } from './supabaseClient'
 import './feature-banking.css'
 import './bill-pay.css'
 
-const money=(n:number)=>`$${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})`
+const money=(n:number)=>`$${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const categories=['Utilities','Internet','Mobile','Insurance','Credit card','Loan','Housing','Other']
 type Payee={id:string;name:string;account_reference:string|null;delivery_method:string;status:string;category:string}
 type Biller={id:string;name:string;category:string;description:string|null}
