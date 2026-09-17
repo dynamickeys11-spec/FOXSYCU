@@ -4,7 +4,7 @@ import { supabase } from './supabaseClient'
 import './feature-banking.css'
 
 type Props={movementId:string;amount:number;reference:string;onComplete:(result:any)=>void;onBack:()=>void}
-const money=(n:number)=>`$${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})`
+const money=(n:number)=>`$${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const secondsLeft=(iso:string)=>Math.max(0,Math.ceil((new Date(iso).getTime()-Date.now())/1000))
 const format=(s:number)=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`
 
