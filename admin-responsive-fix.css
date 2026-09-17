@@ -1,0 +1,65 @@
+/* FNCU admin responsive + interaction corrections. Loaded after the presentation layer. */
+.admin-menu-button{display:none}
+.admin-mobile-close{display:none}
+
+@media (max-width: 1099px){
+  .admin-main{max-width:none}
+  .metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .customer-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+@media (max-width: 767px){
+  .admin-shell{display:block;min-height:100dvh;overflow-x:hidden;overflow-y:auto}
+  .admin-main{height:auto;min-height:100dvh;overflow:visible}
+  .admin-header{height:64px;min-height:64px;grid-template-columns:40px minmax(0,1fr) 40px;padding:0 12px;gap:8px;position:sticky;top:0;z-index:30}
+  .admin-menu-button{display:grid;grid-column:1;grid-row:1;width:36px;height:36px}
+  .admin-mobile-close{display:grid}
+  .admin-header h1{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .admin-header-left>div{grid-column:2;min-width:0}
+  .refresh{grid-column:3;width:36px;min-width:36px;padding:0;font-size:0}
+  .refresh svg{width:15px;height:15px}
+  .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:12px 12px 0;gap:8px}
+  .metric-card{min-height:74px;padding:11px 12px}
+  .metric-card strong{font-size:16px;overflow-wrap:anywhere}
+  .admin-grid{grid-template-columns:1fr;padding:10px 12px 22px;overflow:visible}
+  .admin-panel{margin-left:12px;margin-right:12px}
+  .admin-grid>.admin-panel{margin-left:0;margin-right:0}
+  .admin-toolbar{padding:12px 12px 0}
+  .customer-card-grid{grid-template-columns:1fr;padding:12px}
+  .table-wrap{max-width:100%;overflow-x:auto}
+  .table-wrap table{min-width:640px}
+  .admin-sidebar{left:0!important;right:auto;top:0;bottom:0;width:min(320px,88vw);max-width:320px;transform:translateX(-105%);border-radius:0 16px 16px 0;z-index:90}
+  .admin-sidebar.mobile-open{transform:translateX(0)}
+  .admin-mobile-scrim{display:block;position:fixed;inset:0;z-index:80}
+  .admin-sidebar .admin-mobile-close{display:grid;flex:0 0 36px}
+  .admin-sidebar .back-bank{margin-top:auto}
+  .admin-drawer{width:100%;max-width:none;height:auto;max-height:92dvh;top:auto;bottom:0;border-left:0;border-radius:16px 16px 0 0;padding:16px 14px}
+  .drawer-backdrop{align-items:flex-end}
+  .customer-detail-grid{grid-template-columns:1fr 1fr}
+  .account-actions{display:block}
+  .account-actions .admin-select{margin-top:8px;width:100%;max-width:none}
+}
+
+@media (max-width: 420px){
+  .admin-header{padding:0 9px;grid-template-columns:38px minmax(0,1fr) 36px}
+  .admin-header h1{font-size:13px}
+  .metric-grid{padding-left:9px;padding-right:9px;grid-template-columns:1fr 1fr}
+  .metric-card{padding:10px;min-height:70px}
+  .metric-card span{font-size:8px}
+  .metric-card strong{font-size:15px}
+  .admin-grid{padding-left:9px;padding-right:9px}
+  .admin-toolbar{padding-left:9px;padding-right:9px}
+  .customer-card-grid{padding:9px}
+  .customer-detail-grid{grid-template-columns:1fr}
+  .admin-drawer{max-height:94dvh}
+}
+
+@media (min-width: 768px){
+  .admin-mobile-scrim{display:none!important}
+  .admin-mobile-close{display:none!important}
+  .admin-menu-button{display:none!important}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .admin-sidebar{transition:none!important}
+}
