@@ -8,12 +8,22 @@ export default function AdminNavigation(){
   const navigate=useNavigate(); const location=useLocation(); const [open,setOpen]=useState(false); const [pendingCount,setPendingCount]=useState(0)
   const loadPending=async()=>{const r=await supabase.rpc('admin_get_pending_application_count');if(!r.error)setPendingCount(Number(r.data||0))}
   useEffect(()=>{void loadPending();const timer=setInterval(()=>void loadPending(),15000);return()=>clearInterval(timer)},[])
+  useEffect(()=>{setOpen(false)},[location.pathname,location.search])
+  useEffect(()=>{
+    if(!open)return
+    const onKey=(event:KeyboardEvent)=>{if(event.key==='Escape')setOpen(false)}
+    const onResize=()=>{if(window.innerWidth>820)setOpen(false)}
+    document.addEventListener('keydown',onKey)
+    window.addEventListener('resize',onResize)
+    document.body.style.overflow='hidden'
+    return()=>{document.removeEventListener('keydown',onKey);window.removeEventListener('resize',onResize);document.body.style.overflow=''}
+  },[open])
   const go=(path:string)=>{setOpen(false);navigate(path)}
   const active=(path:string)=>path==='/admin'?location.pathname==='/admin':location.pathname===path
   return <>
-    <button className="admin-menu-button" aria-label="Open admin navigation" aria-expanded={open} onClick={()=>setOpen(true)}><Menu size={20}/></button>
+    <button className="admin-menu-button" aria-label={open?'Close admin navigation':'Open admin navigation'} aria-expanded={open} onClick={()=>setOpen(v=>!v)}><Menu size={20}/></button>
     {open&&<button className="admin-mobile-scrim" aria-label="Close admin navigation" onClick={()=>setOpen(false)}/>} 
-    <aside className={`admin-sidebar ${open?'is-open':''}`} aria-label="Admin navigation">
+    <aside className={`admin-sidebar ${open?'is-open':''}`} aria-label="Admin navigation" aria-hidden={!open&&typeof window!=='undefined'&&window.innerWidth<=820}>
       <div className="admin-brand"><span>A</span><div><strong>ADMIN</strong><small>OPERATIONS</small></div><button className="admin-mobile-close" aria-label="Close admin navigation" onClick={()=>setOpen(false)}><X size={18}/></button></div>
       <nav className="admin-nav">
         <div className="nav-label">WORKSPACE</div>
