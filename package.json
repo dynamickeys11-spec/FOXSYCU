@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/extract-fncu-logo.mjs",
     "build": "vite build",
+    "prebuild": "node scripts/extract-fncu-logo.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
