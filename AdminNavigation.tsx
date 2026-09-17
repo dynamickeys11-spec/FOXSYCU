@@ -1,10 +1,13 @@
-import { useState } from 'react'
-import { Activity, ArrowDownToLine, ArrowUpRight, Bell, ClipboardList, LockKeyhole, Menu, MessageSquare, Users, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Activity, ArrowDownToLine, ArrowUpRight, Bell, ClipboardList, Clock3, LockKeyhole, Menu, MessageSquare, Users, X } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { supabase } from './supabaseClient'
 import './admin.css'
 
 export default function AdminNavigation(){
-  const navigate=useNavigate(); const location=useLocation(); const [open,setOpen]=useState(false)
+  const navigate=useNavigate(); const location=useLocation(); const [open,setOpen]=useState(false); const [pendingCount,setPendingCount]=useState(0)
+  const loadPending=async()=>{const r=await supabase.rpc('admin_get_pending_application_count');if(!r.error)setPendingCount(Number(r.data||0))}
+  useEffect(()=>{void loadPending();const timer=setInterval(()=>void loadPending(),15000);return()=>clearInterval(timer)},[])
   const go=(path:string)=>{setOpen(false);navigate(path)}
   const active=(path:string)=>path==='/admin'?location.pathname==='/admin':location.pathname===path
   return <>
@@ -17,6 +20,8 @@ export default function AdminNavigation(){
         <button className={active('/admin')?'active':''} onClick={()=>go('/admin')}><Activity size={16}/> Overview</button>
         <button onClick={()=>go('/admin')}><Users size={16}/> Customers</button>
         <button onClick={()=>go('/admin')}><ClipboardList size={16}/> Transactions</button>
+        <div className="nav-label nav-label-spaced">CUSTOMER ONBOARDING</div>
+        <button className={active('/admin/applications')?'active':''} onClick={()=>go('/admin/applications')}><Clock3 size={16}/> Applications {pendingCount>0&&<span className="admin-nav-badge" aria-label={`${pendingCount} pending applications`}>{pendingCount>99?'99+':pendingCount}</span>}</button>
         <div className="nav-label nav-label-spaced">MONEY OPERATIONS</div>
         <button className={active('/admin/credits')?'active':''} onClick={()=>go('/admin/credits')}><ArrowUpRight size={16}/> Credit account</button>
         <button className={active('/admin/deposits')?'active':''} onClick={()=>go('/admin/deposits')}><ArrowDownToLine size={16}/> Check deposits</button>
