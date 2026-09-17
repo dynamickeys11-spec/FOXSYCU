@@ -6,7 +6,7 @@ import { useCustomerData } from './CustomerProvider'
 import { createMoneyMovement } from './moneyMovementServiceV2'
 import TransferAuthorizationPanel from './TransferAuthorizationPanel'
 import './feature-banking.css'
-const DRAFT_KEY='fncu:p2p-payment-draft';const money=(n:number)=>`$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})`
+const DRAFT_KEY='fncu:p2p-payment-draft';const money=(n:number)=>`$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 type Draft={recipient:string;email:string;amount:number;memo:string;sourceAccountId:string}
 export default function P2PPaymentReviewPage(){
  const{account,refresh}=useCustomerData();const navigate=useNavigate();const[draft,setDraft]=useState<Draft|null>(null);const[busy,setBusy]=useState(false);const[error,setError]=useState('');const[movement,setMovement]=useState<any>(null);const[result,setResult]=useState<any>(null)
