@@ -41,11 +41,9 @@ import './avatar-fix.css'
 import './responsive-platform.css'
 import './check-deposit.css'
 import './admin-login.css'
-import './admin-polish.css'
 import './desktop-banking.css'
 import './loading-presentation.css'
-import './admin-customer-style.css'
-import './admin-responsive-fix.css'
+import './admin-dashboard-design.css'
 import './admin-unified-nav.css'
 function useMfaGate(session: any) { const [ready,setReady]=useState(false);const[needs,setNeeds]=useState(false);useEffect(()=>{let active=true;const check=async()=>{if(!session){setReady(false);setNeeds(false);return};const{data,error}=await supabase.auth.mfa.getAuthenticatorAssuranceLevel();if(!active)return;if(error||data.nextLevel!=='aal2'||data.currentLevel==='aal2'){setNeeds(false);setReady(true);return}const token=sessionStorage.getItem('fncu.mfa.recovery.grant');if(token){const{data:grant}=await supabase.rpc('has_mfa_recovery_grant',{p_grant_token:token});if(grant?.valid){setNeeds(false);setReady(true);return}sessionStorage.removeItem('fncu.mfa.recovery.grant')}setNeeds(true);setReady(true)};void check();return()=>{active=false}},[session]);return{ready,needs,setNeeds}}
 function Loading(){return <main className="fncu-loading" aria-label="Loading secure account"><div className="fncu-loading-card"><img className="fncu-loading-logo" src="/fncu-logo.svg" alt="First Nebraska Credit Union" draggable="false"/><div className="fncu-loading-spinner" aria-hidden="true"/><p className="fncu-loading-copy">Loading your secure account…</p></div></main>}
