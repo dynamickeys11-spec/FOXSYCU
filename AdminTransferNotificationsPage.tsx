@@ -4,7 +4,6 @@ import { supabase } from './supabaseClient'
 import AdminNavigation from './AdminNavigation'
 import './admin.css'
 import './admin-polish.css'
-import './admin-unified-nav.css'
 
 type Row={id:string;user_id:string;movement_id:string;token_value:string;status:string;expires_at:string;verified_at:string|null;attempts:number;delivery_status:string;created_at:string;customer_name:string;reference:string;rail:string;amount:number;fee:number;currency:string;destination:string|null;destination_account:string|null}
 const money=(n:number,c='USD')=>new Intl.NumberFormat('en-US',{style:'currency',currency:c,maximumFractionDigits:2}).format(Number(n||0))
