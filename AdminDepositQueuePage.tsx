@@ -3,7 +3,6 @@ import { RefreshCw, X } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import AdminNavigation from './AdminNavigation'
 import './admin.css'
-import './admin-unified-nav.css'
 
 type Deposit={id:string;user_id:string;account_id:string;amount:number;front_document_path:string|null;back_document_path:string|null;status:string;funds_available_at:string|null;reference:string|null;created_at:string}
 const money=(n:number)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0))
