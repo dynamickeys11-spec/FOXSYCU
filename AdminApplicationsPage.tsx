@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import AdminNavigation from './AdminNavigation'
 import './admin.css'
-import './admin-unified-nav.css'
 import './admin-applications.css'
 
 type Application={id:string;email:string|null;full_name:string|null;preferred_name:string|null;phone:string|null;date_of_birth:string|null;address_line1:string|null;city:string|null;state_region:string|null;postal_code:string|null;country:string|null;occupation:string|null;employment_status:string|null;created_at:string;approval_status:string;approval_note:string|null}
