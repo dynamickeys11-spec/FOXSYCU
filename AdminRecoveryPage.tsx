@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import AdminNavigation from './AdminNavigation'
 import './admin.css'
-import './admin-unified-nav.css'
 
 export default function AdminRecoveryPage(){
  const navigate=useNavigate(); const[email,setEmail]=useState(''); const[code,setCode]=useState(''); const[message,setMessage]=useState(''); const[busy,setBusy]=useState(false)
