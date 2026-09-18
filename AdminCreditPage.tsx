@@ -3,7 +3,6 @@ import { CheckCircle2, Search } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import AdminNavigation from './AdminNavigation'
 import './admin.css'
-import './admin-unified-nav.css'
 
 type Customer={id:string;email:string|null;full_name:string|null;preferred_name:string|null;account_id:string|null;account_name:string|null;available_balance:number|null;posted_balance:number|null;account_status:string|null}
 const money=(v:number|null|undefined)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(v||0))
