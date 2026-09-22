@@ -6,3 +6,13 @@
 @media(max-width:520px){.transfer-rail-tabs{gap:3px}.transfer-rail-tabs button{min-width:88px;padding:10px 12px;font-size:12px}.fb-card{padding:17px}.fb-detail{gap:10px;align-items:flex-start}.fb-detail b{text-align:right;max-width:62%;overflow-wrap:anywhere}.fb-account-preview{align-items:flex-start;flex-direction:column}.fb-account-preview strong{white-space:normal;overflow-wrap:anywhere}.fb-dialog{padding:23px 16px}.fb-modal{padding:10px;align-items:end}.fb-actions .fb-btn{flex:1 1 140px}.beneficiary-v2-actions{display:grid;grid-template-columns:1fr}.beneficiary-v2-actions .fb-btn{width:100%}.customer-chat-heading h1{font-size:25px}.customer-chat-header{padding:12px 13px}.customer-chat-header small{font-size:10px}.customer-chat-messages{padding:12px}.customer-chat-composer-grid{grid-template-columns:1fr auto}.customer-chat-composer textarea{height:58px}.customer-chat-bubble{max-width:91%}.customer-chat-back{margin-top:8px}}
 @media(max-width:380px){.transfer-rail-tabs button{min-width:82px;padding:9px 10px;font-size:11px}.fb-heading h1{font-size:25px}.fb-card{padding:15px}.fb-field input,.fb-field select{padding:11px}.fb-btn{width:100%}.fb-actions .fb-btn{flex-basis:100%}.customer-chat-composer button{width:48px;min-width:48px}.customer-chat-note{font-size:8px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* International destination presentation */
+.fb-destination-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;margin:0 0 16px;border:1px solid #dfe4ea;border-radius:12px;background:#fff}
+.fb-destination-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fb-destination-copy span{font-size:10px;font-weight:700;letter-spacing:.08em;color:#667085}
+.fb-destination-copy strong{font-size:15px;line-height:1.25;color:#101828;font-weight:650}
+.fb-currency-badge{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:0 0 auto;padding-left:16px;border-left:1px solid #e4e7ec}
+.fb-currency-badge span{font-size:12px;font-weight:750;letter-spacing:.05em;color:#173b70}
+.fb-currency-badge small{font-size:10px;color:#667085;white-space:nowrap}
+@media (max-width:560px){.fb-destination-card{align-items:flex-start}.fb-currency-badge{padding-left:12px}.fb-currency-badge small{display:none}}
