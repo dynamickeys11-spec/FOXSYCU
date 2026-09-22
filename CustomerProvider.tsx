@@ -60,6 +60,7 @@ function toTransaction(row: any): Transaction { const metadata = normalizeFNCUBr
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialDataReady, setInitialDataReady] = useState(false)
   const [data, setData] = useState<Omit<CustomerData, 'loading' | 'session' | 'refresh'>>({ profile: null, account: null, vaults: [], beneficiaries: [], transactions: [], notifications: [], card: null, security: { two_fa: true, passkey: false, alerts: true }, notificationPreferences: null, supportCases: [], messages: [], externalAccounts: [], categories: [], budgets: [], recurringPayments: [], billPayees: [], billPayments: [], directDeposit: [], checkDeposits: [], loginEvents: [], devices: [] })
 
   const refresh = async () => {
@@ -126,7 +127,23 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     return () => { active = false; listener.subscription.unsubscribe() }
   }, [])
 
-  useEffect(() => { if (session) void refresh() }, [session])
+  useEffect(() => {
+    let active = true
+    if (!session?.user) {
+      setInitialDataReady(true)
+      setLoading(false)
+      return () => { active = false }
+    }
+    setInitialDataReady(false)
+    setLoading(true)
+    void refresh().finally(() => {
+      if (active) {
+        setInitialDataReady(true)
+        setLoading(false)
+      }
+    })
+    return () => { active = false }
+  }, [session?.user?.id])
 
   useEffect(() => {
     if (!session?.user) return
@@ -164,7 +181,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session?.user?.id])
 
-  const value = useMemo(() => ({ ...data, loading, session, refresh }), [data, loading, session])
+  const value = useMemo(() => ({ ...data, loading: loading || !initialDataReady, session, refresh }), [data, loading, initialDataReady, session])
   return <CustomerContext.Provider value={value}>{children}</CustomerContext.Provider>
 }
 
