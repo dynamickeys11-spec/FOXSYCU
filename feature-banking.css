@@ -16,3 +16,11 @@
 .fb-currency-badge span{font-size:12px;font-weight:750;letter-spacing:.05em;color:#173b70}
 .fb-currency-badge small{font-size:10px;color:#667085;white-space:nowrap}
 @media (max-width:560px){.fb-destination-card{align-items:flex-start}.fb-currency-badge{padding-left:12px}.fb-currency-badge small{display:none}}
+
+
+/* Routing-number bank identification */
+.fb-bank-lookup{margin:-8px 0 12px;padding:9px 12px;border:1px solid #e4e7ec;border-top:0;border-radius:0 0 8px 8px;background:#f8fafc;color:#667085;font-size:12px;line-height:1.35}
+.fb-bank-lookup.found{display:flex;align-items:baseline;gap:7px;color:#344054}
+.fb-bank-lookup.found span{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#667085}
+.fb-bank-lookup.found strong{font-size:13px;font-weight:600;color:#101828}
+.fb-bank-lookup.error{color:#b42318;background:#fff7f6;border-color:#fecdca}
