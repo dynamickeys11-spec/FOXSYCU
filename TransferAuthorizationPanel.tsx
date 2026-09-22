@@ -7,17 +7,6 @@ type Props={movementId:string;amount:number;reference:string;onComplete:(result:
 const money=(n:number)=>`$${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const secondsLeft=(iso:string)=>Math.max(0,Math.ceil((new Date(iso).getTime()-Date.now())/1000))
 const format=(s:number)=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`
-const functionError=async(data:any,error:any,fallback:string)=>{
-  if(data?.error)return String(data.error)
-  try{
-    const response=(error as any)?.context
-    if(response?.json){
-      const body=await response.clone().json()
-      if(body?.error)return String(body.error)
-    }
-  }catch{}
-  return fallback
-}
 
 export default function TransferAuthorizationPanel({movementId,amount,reference,onComplete,onBack}:Props){
  const[stage,setStage]=useState<'pin'|'token'>('pin');const[pin,setPin]=useState('');const[token,setToken]=useState('');const[expiresAt,setExpiresAt]=useState('');const[remaining,setRemaining]=useState(0);const[busy,setBusy]=useState(false);const[error,setError]=useState('')
@@ -27,7 +16,7 @@ export default function TransferAuthorizationPanel({movementId,amount,reference,
   setBusy(true);setError('')
   try{
     const {data,error:e}=await supabase.functions.invoke('transfer-security',{body:{action:'send_token',movement_id:movementId,pin}})
-    if(e)throw new Error(await functionError(data,e,'We could not request the transfer authorization code. Please try again.'))
+    if(e)throw new Error(data?.error||'We could not request the transfer authorization code. Please try again.')
     if(data?.error)throw new Error(String(data.error))
     if(!data?.expires_at)throw new Error('The transfer authorization request was not created. Please try again.')
     setExpiresAt(data.expires_at);setRemaining(secondsLeft(data.expires_at));setStage('token')
@@ -40,7 +29,7 @@ export default function TransferAuthorizationPanel({movementId,amount,reference,
   setBusy(true);setError('')
   try{
     const {data,error:e}=await supabase.functions.invoke('transfer-security',{body:{action:'authorize',movement_id:movementId,pin,token}})
-    if(e)throw new Error(await functionError(data,e,'We could not authorize this transfer. No transfer was completed.'))
+    if(e)throw new Error(data?.error||'We could not authorize this transfer. No transfer was completed.')
     if(data?.error)throw new Error(String(data.error))
     if(!data?.result)throw new Error('The transfer authorization response was incomplete. No transfer was completed.')
     onComplete(data.result)
