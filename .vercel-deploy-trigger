@@ -1,2 +1,2 @@
 Deployment trigger for current production source.
-Bank resolver updated to reuse existing FNCU beneficiary records before directory lookup.
+Bank resolver and beneficiary UI updates verified in main.
