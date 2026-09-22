@@ -1,2 +1,2 @@
 Deployment trigger for current production source.
-Bank resolver and beneficiary UI updates verified in main.
+Transfer authorization, admin token delivery, and variable-length US account validation fixed.
