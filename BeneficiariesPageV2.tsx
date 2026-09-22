@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { BankingShell } from './BankingShell'
 import { useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
+import { lookupUsBankByRoutingNumber } from './services/bankRoutingLookup'
 import './feature-banking.css'
 import './beneficiaries-v2.css'
 
@@ -20,18 +21,21 @@ export function BeneficiariesPageV2(){
   const [accountType,setAccountType]=useState('checking')
   const [error,setError]=useState('')
   const [busy,setBusy]=useState(false)
+  const [bankLookupState,setBankLookupState]=useState<'idle'|'checking'|'verified'|'error'>('idle')
   const [deleting,setDeleting]=useState<string|null>(null)
+
+  const detectBank=async(value:string)=>{setRoutingNumber(value);setInstitution('');setBankLookupState('idle');setError('');if(value.length!==9)return;setBankLookupState('checking');try{const result=await lookupUsBankByRoutingNumber(value);setInstitution(result.bankName);setBankLookupState('verified')}catch(e:any){setBankLookupState('error');setError(e?.message||'Unable to identify the bank from that routing number.')}}
 
   const add=async()=>{
     const uid=(await supabase.auth.getUser()).data.user?.id
-    if(!uid||!name.trim()||!/^\d{12}$/.test(accountNumber)||!/^\d{9}$/.test(routingNumber)||!institution.trim()){
+    if(!uid||!name.trim()||!/^\d{12}$/.test(accountNumber)||!/^\d{9}$/.test(routingNumber)||!institution.trim()||bankLookupState!=='verified'){
       setError('Enter the beneficiary name, full 12-digit account number, 9-digit routing number and bank.')
       return
     }
     setBusy(true);setError('')
     const {error:e}=await supabase.from('beneficiaries').insert({user_id:uid,name:name.trim(),account_masked:accountNumber,account_number:accountNumber,routing_number:routingNumber,institution_name:institution.trim(),account_type:accountType,beneficiary_type:'external',status:'active'})
     if(e)setError(e.message)
-    else{await refresh();setOpen(false);setName('');setAccountNumber('');setRoutingNumber('');setInstitution('');setAccountType('checking')}
+    else{await refresh();setOpen(false);setName('');setAccountNumber('');setRoutingNumber('');setInstitution('');setAccountType('checking');setBankLookupState('idle')}
     setBusy(false)
   }
   const remove=async(id:string)=>{
@@ -56,6 +60,6 @@ export function BeneficiariesPageV2(){
       {!beneficiaries.length&&<div className="fb-account-preview"><div><span>SAVED RECIPIENTS</span><b>No beneficiaries saved</b><small>Save a recipient once and reuse it for future transfers.</small></div></div>}
       {error&&<p className="fb-error">{error}</p>}
     </section>
-    {open&&<div className="fb-modal"><div className="fb-dialog beneficiary-form"><button className="fb-x" onClick={()=>setOpen(false)}><X/></button><span>NEW RECIPIENT</span><h2>Add beneficiary</h2><div className="beneficiary-form-grid"><label>Name<input value={name} onChange={e=>setName(e.target.value)} placeholder="Recipient name"/></label><label>Bank / institution<input value={institution} onChange={e=>setInstitution(e.target.value)} placeholder="Bank name"/></label><label>Full account number<input value={accountNumber} onChange={e=>setAccountNumber(e.target.value.replace(/\D/g,'').slice(0,12))} inputMode="numeric" maxLength={12} placeholder="12 digits"/></label><label>Routing number<input value={routingNumber} onChange={e=>setRoutingNumber(e.target.value.replace(/\D/g,'').slice(0,9))} inputMode="numeric" maxLength={9} placeholder="9 digits"/></label><label>Account type<select value={accountType} onChange={e=>setAccountType(e.target.value)}><option value="checking">Checking</option><option value="savings">Savings</option><option value="business checking">Business checking</option></select></label></div>{error&&<p className="fb-error">{error}</p>}<button className="fb-btn primary" disabled={busy} onClick={()=>void add()}>{busy?'Saving…':'Save beneficiary'}</button></div></div>}
+    {open&&<div className="fb-modal"><div className="fb-dialog beneficiary-form"><button className="fb-x" onClick={()=>setOpen(false)}><X/></button><span>NEW RECIPIENT</span><h2>Add beneficiary</h2><div className="beneficiary-form-grid"><label>Name<input value={name} onChange={e=>setName(e.target.value)} placeholder="Recipient name"/></label><label>Bank / institution<input value={institution} readOnly placeholder="Detected from routing number"/><small style={{display:'block',marginTop:6,color:bankLookupState==='error'?'#b42318':'#667085'}}>{bankLookupState==='checking'?'Identifying bank…':bankLookupState==='verified'?'Bank identified from routing number.':'Enter a 9-digit routing number and the bank will be detected automatically.'}</small></label><label>Full account number<input value={accountNumber} onChange={e=>setAccountNumber(e.target.value.replace(/\D/g,'').slice(0,12))} inputMode="numeric" maxLength={12} placeholder="12 digits"/></label><label>Routing number<input value={routingNumber} onChange={e=>void detectBank(e.target.value.replace(/\D/g,'').slice(0,9))} inputMode="numeric" maxLength={9} placeholder="9 digits"/></label><label>Account type<select value={accountType} onChange={e=>setAccountType(e.target.value)}><option value="checking">Checking</option><option value="savings">Savings</option><option value="business checking">Business checking</option></select></label></div>{error&&<p className="fb-error">{error}</p>}<button className="fb-btn primary" disabled={busy} onClick={()=>void add()}>{busy?'Saving…':'Save beneficiary'}</button></div></div>}
   </div></BankingShell>
 }
