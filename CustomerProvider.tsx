@@ -63,8 +63,9 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [initialDataReady, setInitialDataReady] = useState(false)
   const [data, setData] = useState<Omit<CustomerData, 'loading' | 'session' | 'refresh'>>({ profile: null, account: null, vaults: [], beneficiaries: [], transactions: [], notifications: [], card: null, security: { two_fa: true, passkey: false, alerts: true }, notificationPreferences: null, supportCases: [], messages: [], externalAccounts: [], categories: [], budgets: [], recurringPayments: [], billPayees: [], billPayments: [], directDeposit: [], checkDeposits: [], loginEvents: [], devices: [] })
 
-  const refresh = async () => {
+  const refresh = async (options?: { initial?: boolean }) => {
     if (!session?.user) return
+    const initial = options?.initial === true
     const uid = session.user.id
     try { await ensureCustomer(uid) } catch (error) { console.error('FNCU customer bootstrap warning:', error) }
 
@@ -95,29 +96,31 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     const failed = [profile, account, vaults, beneficiaries, transactions, notifications, card, security, supportCases, messages, notificationPreferences, externalAccounts, categories, budgets, recurringPayments, billPayees, billPayments, directDeposit, checkDeposits, loginEvents, devices].filter(r => r.error)
     if (failed.length) console.error('FNCU customer data refresh errors:', failed.map(r => r.error?.message))
 
-    setData({
-      profile: profile.data,
-      account: account.data,
-      vaults: vaults.data ?? [],
-      beneficiaries: beneficiaries.data ?? [],
-      transactions: (transactions.data ?? []).map(toTransaction),
-      notifications: notifications.data ?? [],
-      card: card.data,
-      security: security.data ?? { two_fa: true, passkey: false, alerts: true },
-      notificationPreferences: notificationPreferences.data,
-      supportCases: supportCases.data ?? [],
-      messages: messages.data ?? [],
-      externalAccounts: externalAccounts.data ?? [],
-      categories: categories.data ?? [],
-      budgets: budgets.data ?? [],
-      recurringPayments: recurringPayments.data ?? [],
-      billPayees: billPayees.data ?? [],
-      billPayments: billPayments.data ?? [],
-      directDeposit: directDeposit.data ?? [],
-      checkDeposits: checkDeposits.data ?? [],
-      loginEvents: loginEvents.data ?? [],
-      devices: devices.data ?? []
-    })
+    setData(current => ({
+      profile: profile.error ? current.profile : (profile.data ?? current.profile),
+      account: account.error ? current.account : (account.data ?? current.account),
+      vaults: vaults.error ? current.vaults : (vaults.data ?? []),
+      beneficiaries: beneficiaries.error ? current.beneficiaries : (beneficiaries.data ?? []),
+      transactions: transactions.error ? current.transactions : (transactions.data ?? []).map(toTransaction),
+      notifications: notifications.error ? current.notifications : (notifications.data ?? []),
+      card: card.error ? current.card : (card.data ?? current.card),
+      security: security.error ? current.security : (security.data ?? current.security),
+      notificationPreferences: notificationPreferences.error ? current.notificationPreferences : notificationPreferences.data,
+      supportCases: supportCases.error ? current.supportCases : (supportCases.data ?? []),
+      messages: messages.error ? current.messages : (messages.data ?? []),
+      externalAccounts: externalAccounts.error ? current.externalAccounts : (externalAccounts.data ?? []),
+      categories: categories.error ? current.categories : (categories.data ?? []),
+      budgets: budgets.error ? current.budgets : (budgets.data ?? []),
+      recurringPayments: recurringPayments.error ? current.recurringPayments : (recurringPayments.data ?? []),
+      billPayees: billPayees.error ? current.billPayees : (billPayees.data ?? []),
+      billPayments: billPayments.error ? current.billPayments : (billPayments.data ?? []),
+      directDeposit: directDeposit.error ? current.directDeposit : (directDeposit.data ?? []),
+      checkDeposits: checkDeposits.error ? current.checkDeposits : (checkDeposits.data ?? []),
+      loginEvents: loginEvents.error ? current.loginEvents : (loginEvents.data ?? []),
+      devices: devices.error ? current.devices : (devices.data ?? [])
+    }))
+    if (initial && (account.error || profile.error)) console.error('FNCU initial customer load could not fully hydrate account data')
+
   }
 
   useEffect(() => {
@@ -136,7 +139,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     }
     setInitialDataReady(false)
     setLoading(true)
-    void refresh().finally(() => {
+    void refresh({ initial: true }).finally(() => {
       if (active) {
         setInitialDataReady(true)
         setLoading(false)
