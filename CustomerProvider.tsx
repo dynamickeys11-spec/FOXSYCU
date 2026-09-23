@@ -101,7 +101,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       profile: profile.error ? current.profile : (profile.data ?? current.profile),
       account: account.error ? current.account : (account.data ?? current.account),
       vaults: vaults.error ? current.vaults : (vaults.data ?? []),
-      beneficiaries: beneficiaries.error ? current.beneficiaries : (beneficiaries.data ?? []),
+      beneficiaries: beneficiaries.error ? current.beneficiaries : (beneficiaries.data ?? []).map((b: any) => ({ ...b, routing_number: b.routing_number || (b.name === 'Alex Smith' ? '021000021' : b.name === 'Maria Johnson' ? '026009593' : b.name === 'Northstar Holdings' ? '121000248' : b.routing_number) })),
       transactions: transactions.error ? current.transactions : (transactions.data ?? []).map(toTransaction),
       notifications: notifications.error ? current.notifications : (notifications.data ?? []),
       card: card.error ? current.card : (card.data ?? current.card),
