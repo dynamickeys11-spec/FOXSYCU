@@ -68,12 +68,12 @@ function buildReconciledHistory(target:number){
   }
 
   const recentBase=[
-    {ref:"DEP-202609-0001",dir:"credit" as const,amount:5000,status:"pending" as const,date:dateIso(2026,9,8,11),type:"ACH_CREDIT",desc:"Incoming funding under review",cp:"External funding source",cat:"Pending funding"},
-    {ref:"PAY-202609-0002",dir:"debit" as const,amount:5000,status:"pending" as const,date:dateIso(2026,9,9,15),type:"CARD_PURCHASE",desc:"Card payment authorization",cp:"Merchant network",cat:"Pending card payment"},
-    {ref:"DEP-202608-0017",dir:"credit" as const,amount:7200,status:"failed" as const,date:dateIso(2026,8,20,10),type:"ACH_CREDIT",desc:"External funding attempt",cp:"External funding source",cat:"Failed deposit"},
-    {ref:"PAY-202608-0018",dir:"debit" as const,amount:7200,status:"failed" as const,date:dateIso(2026,8,21,13),type:"CARD_PURCHASE",desc:"Merchant payment declined",cp:"Merchant network",cat:"Failed payment"},
-    {ref:"REV-202607-0031",dir:"credit" as const,amount:9100,status:"reversed" as const,date:dateIso(2026,7,14,9),type:"ACH_CREDIT",desc:"Reversed incoming transfer",cp:"External funding source",cat:"Reversal"},
-    {ref:"REV-202607-0032",dir:"debit" as const,amount:9100,status:"reversed" as const,date:dateIso(2026,7,15,14),type:"TRANSFER",desc:"Reversed account transfer",cp:"External beneficiary",cat:"Reversal"},
+    {ref:"DEP-202609-0001",dir:"credit" as const,amount:5000,status:"pending" as const,date:dateIso(2026,9,8,11),type:"ACH_CREDIT",desc:"Incoming funding under review",cp:"JPMorgan Chase Bank",cat:"Pending funding"},
+    {ref:"PAY-202609-0002",dir:"debit" as const,amount:5000,status:"pending" as const,date:dateIso(2026,9,9,15),type:"CARD_PURCHASE",desc:"Card payment authorization",cp:"Delta Air Lines",cat:"Pending travel payment"},
+    {ref:"DEP-202608-0017",dir:"credit" as const,amount:7200,status:"failed" as const,date:dateIso(2026,8,20,10),type:"ACH_CREDIT",desc:"External funding attempt",cp:"Bank of America",cat:"Failed deposit"},
+    {ref:"PAY-202608-0018",dir:"debit" as const,amount:7200,status:"failed" as const,date:dateIso(2026,8,21,13),type:"CARD_PURCHASE",desc:"Merchant payment declined",cp:"Walmart",cat:"Failed retail payment"},
+    {ref:"REV-202607-0031",dir:"credit" as const,amount:9100,status:"reversed" as const,date:dateIso(2026,7,14,9),type:"ACH_CREDIT",desc:"Reversed incoming transfer",cp:"Wells Fargo Bank",cat:"Reversal"},
+    {ref:"REV-202607-0032",dir:"debit" as const,amount:9100,status:"reversed" as const,date:dateIso(2026,7,15,14),type:"TRANSFER",desc:"Reversed account transfer",cp:"Amtrak",cat:"Reversal"},
   ];
   for(const x of recentBase){
     rows.push({
