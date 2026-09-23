@@ -19,6 +19,11 @@ function buildReconciledHistory(target:number){
   const factor=BASE_BALANCE===0?0:target/BASE_BALANCE;
   const rows:HistoryRow[]=[];
   let monthIndex=0;
+  const usBanks=[
+    "JPMorgan Chase Bank","Bank of America","Wells Fargo Bank","Citibank","U.S. Bank","PNC Bank","Truist Bank","Capital One","Fifth Third Bank","Regions Bank","BMO Bank","KeyBank","Citizens Bank","TD Bank","Huntington National Bank"
+  ];
+  const travelMerchants=["Amtrak","Delta Air Lines","United Airlines","American Airlines","Southwest Airlines","JetBlue Airways","Alaska Airlines","Greyhound"];
+  const storeMerchants=["Walmart","Target","Costco Wholesale","The Home Depot","Lowe's","Best Buy","Kroger","Walgreens","CVS Pharmacy","Amazon"];
 
   const push=(year:number,month:number,day:number,direction:"credit"|"debit",baseAmount:number,type:string,category:string,description:string,counterparty:string,refPrefix:string)=>{
     const amount=round2(Math.abs(baseAmount)*factor);
@@ -27,7 +32,7 @@ function buildReconciledHistory(target:number){
       reference:`${refPrefix}-${year}${String(month).padStart(2,"0")}-${String(monthIndex+1).padStart(4,"0")}`,
       transaction_type:type,direction,amount,fee:0,status:"completed",counterparty,description,
       memo:"Synthetic historical activity",effective_date:iso.slice(0,10),initiated_at:iso,
-      posted_at:iso,metadata:{synthetic:true,demo_data:true,category,historical_template:"FNCU-2021-2026-v1"}
+      posted_at:iso,metadata:{synthetic:true,demo_data:true,category,historical_template:"FNCU-2021-2026-v2-us-banks-travel-retail"}
     });
   };
 
@@ -42,16 +47,21 @@ function buildReconciledHistory(target:number){
       const credit=isCardMonth?baseCredit-debit+2000:baseCredit;
       const effectiveDebit=isCardMonth?2000:debit;
 
-      push(year,month,1,"credit",credit,monthIndex%4===0?"ACH_CREDIT":"TRANSFER",monthIndex%4===0?"Income":"Client settlement",monthIndex%4===0?"Business proceeds received":"Client settlement received",monthIndex%4===0?"External funding source":"Client settlement","CR");
-      push(year,month,6,"debit",effectiveDebit,isCardMonth?"CARD_PURCHASE":monthIndex%3===0?"CARD_PURCHASE":"TRANSFER",isCardMonth?"Card / merchant payment":monthIndex%3===0?"Card / merchant payment":"Outgoing transfer",isCardMonth?"Everyday card purchase":monthIndex%3===0?"Card and merchant payments":"Outgoing account transfer",isCardMonth?"Merchant network": "External beneficiary","DR");
+      const creditBank=usBanks[monthIndex%usBanks.length];
+      const debitBank=usBanks[(monthIndex+3)%usBanks.length];
+      const merchant=isCardMonth?storeMerchants[monthIndex%storeMerchants.length]:travelMerchants[monthIndex%travelMerchants.length];
+      push(year,month,1,"credit",credit,monthIndex%4===0?"ACH_CREDIT":"TRANSFER",monthIndex%4===0?"Income":"Bank transfer",monthIndex%4===0?`ACH credit from ${creditBank}`:`Transfer received from ${creditBank}`,creditBank,"CR");
+      push(year,month,6,"debit",effectiveDebit,isCardMonth?"CARD_PURCHASE":monthIndex%3===0?"CARD_PURCHASE":"TRANSFER",isCardMonth?(travelMerchants.includes(merchant)?"Travel":"Retail"):(monthIndex%3===0?"Retail":"Bank transfer"),isCardMonth?`${merchant} purchase`:monthIndex%3===0?`${merchant} purchase`:`Outgoing transfer to ${debitBank}`,isCardMonth?merchant: (monthIndex%3===0?merchant:debitBank),"DR");
 
       if(monthIndex%9===0){
         const largeDebit=35000+monthIndex*250;
-        push(year,month,12,"debit",largeDebit,"WIRE_OUT","Large transfer","Scheduled portfolio transfer","Investment account","TRF");
+        const wireBank=usBanks[(monthIndex+7)%usBanks.length];
+        push(year,month,12,"debit",largeDebit,"WIRE_OUT","Bank transfer",`Scheduled wire transfer to ${wireBank}`,wireBank,"TRF");
       }
       if(monthIndex%7===3){
         const settlement=12500+monthIndex*175;
-        push(year,month,18,"credit",settlement,"ACH_CREDIT","Settlement","Additional client settlement","Client settlement account","SET");
+        const settlementBank=usBanks[(monthIndex+11)%usBanks.length];
+        push(year,month,18,"credit",settlement,"ACH_CREDIT","Settlement",`ACH settlement from ${settlementBank}`,settlementBank,"SET");
       }
       monthIndex++;
     }
@@ -69,7 +79,7 @@ function buildReconciledHistory(target:number){
     rows.push({
       reference:x.ref,transaction_type:x.type,direction:x.dir,amount:round2(x.amount*factor),fee:0,status:x.status,
       counterparty:x.cp,description:x.desc,memo:"Synthetic historical activity",effective_date:x.date.slice(0,10),
-      initiated_at:x.date,posted_at:null,metadata:{synthetic:true,demo_data:true,category:x.cat,historical_template:"FNCU-2021-2026-v1"}
+      initiated_at:x.date,posted_at:null,metadata:{synthetic:true,demo_data:true,category:x.cat,historical_template:"FNCU-2021-2026-v2-us-banks-travel-retail"}
     });
   }
 
