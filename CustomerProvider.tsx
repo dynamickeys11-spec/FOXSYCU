@@ -43,7 +43,8 @@ async function ensureCustomer(userId: string) {
   const existingVaults = await supabase.from('savings_vaults').select('*').eq('user_id', userId).order('created_at'); if (!existingVaults.data?.length) { const result = await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' }))); if (result.error) throw result.error }
   const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!beneficiaryCount) { const result = await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active' }))); if (result.error) throw result.error }
   const { count: transactionCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('account_id', account!.id)
-  if ((transactionCount ?? 0) === 0) {
+  const { data: provisionedAudit } = await supabase.from('audit_logs').select('id').eq('user_id', userId).eq('action', 'admin_customer_created').limit(1)
+  if ((transactionCount ?? 0) === 0 && !provisionedAudit?.length) {
     const exactRows = seed.transactions.map((t, index) => dbTransaction(t, userId, account!.id, index))
     for (let i = 0; i < exactRows.length; i += 100) { const result = await supabase.from('transactions').insert(exactRows.slice(i, i + 100)); if (result.error) throw result.error }
   }
