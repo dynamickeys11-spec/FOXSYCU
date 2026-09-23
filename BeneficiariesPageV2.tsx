@@ -48,7 +48,7 @@ export function BeneficiariesPageV2(){
       <div className="fb-card-head"><div><h2>Saved recipients</h2><p>{beneficiaries.length} saved {beneficiaries.length===1?'beneficiary':'beneficiaries'}</p></div><button className="fb-btn primary" onClick={()=>{setError('');setOpen(true)}}><Plus size={15}/>Add beneficiary</button></div>
       <div className="beneficiary-v2-grid">{beneficiaries.map((b:any)=><article className="beneficiary-v2" key={b.id}>
         <div className="beneficiary-v2-top"><span className="beneficiary-v2-icon">{b.beneficiary_type==='business'?<Building2 size={18}/>:<UserRound size={18}/>}</span><span className="beneficiary-v2-status">{b.status||'active'}</span></div>
-        <h3>{b.name}</h3><small>{b.institution_name||'External bank'} · {b.account_type||'checking'}</small>
+        <h3>{b.name}</h3><small>{b.institution_name||'Bank information unavailable'} · {b.account_type||'checking'}</small>
         <div className="beneficiary-v2-detail"><span>Account</span><b>{last4(String(b.account_number||b.account_masked||''))}</b></div>
         <div className="beneficiary-v2-detail"><span>Routing</span><b>{last4(String(b.routing_number||''))}</b></div>
         <div className="beneficiary-v2-actions"><button className="fb-btn primary" onClick={()=>navigate(`/transfers?mode=ach&beneficiary=${encodeURIComponent(b.id)}`)}>Send money <ArrowRight size={14}/></button><button className="fb-btn danger" disabled={deleting===b.id} onClick={()=>void remove(b.id)}><Trash2 size={14}/>{deleting===b.id?'Deleting…':'Delete'}</button></div>
