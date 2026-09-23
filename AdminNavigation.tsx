@@ -32,6 +32,7 @@ export default function AdminNavigation(){
         <button onClick={()=>go('/admin')}><ClipboardList size={16}/> Transactions</button>
         <div className="nav-label nav-label-spaced">CUSTOMER ONBOARDING</div>
         <button className={active('/admin/applications')?'active':''} onClick={()=>go('/admin/applications')}><Clock3 size={16}/> Applications {pendingCount>0&&<span className="admin-nav-badge" aria-label={`${pendingCount} pending applications`}>{pendingCount>99?'99+':pendingCount}</span>}</button>
+        <button className={active('/admin/customers/new')?'active':''} onClick={()=>go('/admin/customers/new')}><Users size={16}/> Create customer</button>
         <div className="nav-label nav-label-spaced">MONEY OPERATIONS</div>
         <button className={active('/admin/credits')?'active':''} onClick={()=>go('/admin/credits')}><ArrowUpRight size={16}/> Credit account</button>
         <button className={active('/admin/deposits')?'active':''} onClick={()=>go('/admin/deposits')}><ArrowDownToLine size={16}/> Check deposits</button>
