@@ -132,7 +132,7 @@ Deno.serve(async(req)=>{
   }
 
   const userId=created.user.id;
-  const {data:provisioned,error:provisionError}=await client.rpc("admin_provision_customer",{
+  const {data:provisioned,error:provisionError}=await client.rpc("admin_provision_customer_reconciled",{
     p_admin_id:admin.id,p_user_id:userId,p_full_name:fullName,p_email:email,p_phone:phone||null,
     p_country:country,p_account_name:accountName,p_opening_balance:history.opening,p_reference:reference,p_history:history.rows
   });
