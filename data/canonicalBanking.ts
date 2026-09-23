@@ -27,6 +27,7 @@ export const CANONICAL_BENEFICIARIES = seed.beneficiaries.map(b => ({
   accountLast4: b.accountLast4,
   type: 'individual' as const,
   bankName: b.name === 'Alex Smith' ? 'JPMorgan Chase Bank, N.A.' : b.name === 'Maria Johnson' ? 'Bank of America, N.A.' : 'Wells Fargo Bank, N.A.',
+  routingNumber: b.name === 'Alex Smith' ? '021000021' : b.name === 'Maria Johnson' ? '026009593' : '121000248',
 }))
 
 export function makeAccountName(ownerName: string) {
