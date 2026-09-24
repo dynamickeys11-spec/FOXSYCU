@@ -5,7 +5,7 @@ import { BankingShell } from './BankingShell'
 import { useCustomerData } from './CustomerProvider'
 import { supabase } from './supabaseClient'
 import type { MoneyMovementRail } from './moneyMovementServiceV2'
-import { isValidUsRoutingNumber, lookupUsBankByRoutingNumber } from './services/bankRoutingLookup'
+import { lookupUsBankByRoutingNumber } from './services/bankRoutingLookup'
 import './feature-banking.css'
 
 type Destination={id:string;account_name:string;account_type:string;currency:string;account_number:string;directory_destination_id?:string|null}
@@ -14,7 +14,7 @@ const rails:Array<{id:MoneyMovementRail;label:string}>=[{id:'internal',label:'FN
 const mode=(v:string|null):MoneyMovementRail=>v==='deposit'?'deposit':v==='ach'||v==='send'?'ach':v==='wire'?'wire':v==='international'?'international':v==='p2p'||v==='zelle_like'?'zelle_like':'internal'
 const money=(n:number)=>`$${Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 const sortCode=(v:string)=>v?`${v.slice(0,2)}-${v.slice(2,4)}-${v.slice(4,6)}`:'—'
-const REVIEW_KEY='fncu:transfer-review-draft';const isRoutingValid=(value:string)=>isValidUsRoutingNumber(value)
+const REVIEW_KEY='fncu:transfer-review-draft'
 
 export function TransferCenterV2(){
  const{account,beneficiaries}=useCustomerData();const navigate=useNavigate();const[params]=useSearchParams()
@@ -22,7 +22,7 @@ export function TransferCenterV2(){
  const[internationalAccount,setInternationalAccount]=useState('');const[internationalSort,setInternationalSort]=useState('');const[internationalSwift,setInternationalSwift]=useState('');const[internationalDestination,setInternationalDestination]=useState<InternationalDestination|null>(null)
  const[recipientName,setRecipientName]=useState('');const[externalAccount,setExternalAccount]=useState('');const[externalRouting,setExternalRouting]=useState('');const[detectedBank,setDetectedBank]=useState('');const[bankLookupState,setBankLookupState]=useState<'idle'|'checking'|'found'|'error'>('idle');const[externalAccountType,setExternalAccountType]=useState('checking');const[p2pEmail,setP2pEmail]=useState('');const[amount,setAmount]=useState('');const[memo,setMemo]=useState('');const[busy,setBusy]=useState(false);const[error,setError]=useState('')
  useEffect(()=>setRail(mode(params.get('mode'))),[params])
- useEffect(()=>{if(!['ach','wire'].includes(rail)){setDetectedBank('');setBankLookupState('idle');return}if(params.get('beneficiary')){return}if(externalRouting.length!==9){setDetectedBank('');setBankLookupState('idle');return}let cancelled=false;setBankLookupState('checking');void lookupUsBankByRoutingNumber(externalRouting).then(result=>{if(!cancelled){setDetectedBank(result.bankName);setBankLookupState('found')}}).catch(()=>{if(!cancelled){setDetectedBank('');setBankLookupState('error')}});return()=>{cancelled=true}},[externalRouting,rail,params])
+ useEffect(()=>{if(!['ach','wire'].includes(rail)){setDetectedBank('');setBankLookupState('idle');return}if(params.get('beneficiary')){return}if(externalRouting.length!==9){setDetectedBank('');setBankLookupState('idle');return}let cancelled=false;setBankLookupState('checking');void lookupUsBankByRoutingNumber(externalRouting).then(result=>{if(!cancelled){setDetectedBank(result.bankName);setBankLookupState('found')}}).catch(()=>{if(!cancelled){setDetectedBank('');setBankLookupState('idle')}});return()=>{cancelled=true}},[externalRouting,rail,params])
  useEffect(()=>{const id=params.get('beneficiary');if(!id)return;const b=(beneficiaries as any[]).find(x=>String(x.id)===String(id));if(!b)return;setRail('ach');setRecipientName(String(b.name||''));const fullAccount=String(b.account_number||'').replace(/\D/g,'');
 const maskedAccount=String(b.account_masked||'');
 const bankName=String(b.institution_name||'').trim();
