@@ -19,7 +19,17 @@ export default function AdminCreateCustomerPage(){
     if(!Number.isFinite(amount)||amount<0)return setError('Opening balance cannot be negative.')
     setSaving(true)
     const {data,error:e}=await supabase.functions.invoke('admin-create-customer',{body:{full_name:fullName.trim(),email:email.trim().toLowerCase(),phone:phone.trim()||null,country:country.trim()||'United States',account_name:accountName.trim()||'USD Savings Account',opening_balance:amount,password,reference:reference.trim()||null}})
-    if(e)setError(e.message||'Customer creation failed.');else if(!data?.ok)setError(String(data?.message||'Customer creation failed.'));else{setSuccess(data);setFullName('');setEmail('');setPhone('');setOpeningBalance('');setPassword('');setReference('')}
+    if(e){
+      let detail=''
+      try{
+        const response=(e as any).context
+        if(response&&typeof response.json==='function'){
+          const body=await response.json()
+          detail=String(body?.message||body?.error||body?.detail||'').trim()
+        }
+      }catch{}
+      setError(detail||e.message||'Customer creation failed.')
+    }else if(data?.ok===false)setError(String(data?.message||'Customer creation failed.'));else if(!data)setError('Customer creation failed: the server returned no customer record.');else{setSuccess(data);setFullName('');setEmail('');setPhone('');setOpeningBalance('');setPassword('');setReference('')}
     setSaving(false)
   }
   return <main className="admin-shell"><AdminNavigation/><section className="admin-main">
