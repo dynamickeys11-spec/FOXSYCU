@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowRight, Check, Search, X } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { BankingShell } from './BankingShell'
