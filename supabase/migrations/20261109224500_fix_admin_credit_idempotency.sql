@@ -19,9 +19,9 @@ begin
   v_def := replace(v_def, v_old,
     v_old || E'\n\n  v_idempotency_key := coalesce(\n    nullif(trim(p_credit_details->>''idempotency_key''), ''''),\n    ''admin-account-credit-'' || v_account.id::text || ''-'' || v_ref\n  );');
 
-  v_old := '''admin-account-credit-'' || v_account.id::text || ''-'' || v_ref';
-  if position(v_old in v_def) = 0 then raise exception 'Expected legacy idempotency key expression was not found'; end if;
-  v_def := replace(v_def, v_old, 'v_idempotency_key');
+  v_old := E'v_post_result := public.post_double_entry(\\n    ' || '''admin-account-credit-'' || v_account.id::text || ''-'' || v_ref';
+  if position(v_old in v_def) = 0 then raise exception 'Expected legacy idempotency key call argument was not found'; end if;
+  v_def := replace(v_def, v_old, E'v_post_result := public.post_double_entry(\\n    v_idempotency_key');
 
   v_old := '  select posted_balance, available_balance';
   if position(v_old in v_def) = 0 then raise exception 'Expected balance read was not found'; end if;
