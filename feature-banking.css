@@ -24,3 +24,11 @@
 .fb-bank-lookup.found span{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#667085}
 .fb-bank-lookup.found strong{font-size:13px;font-weight:600;color:#101828}
 .fb-bank-lookup.error{color:#b42318;background:#fff7f6;border-color:#fecdca}
+
+
+/* Compact, purpose-built transaction notification dialog */
+.transaction-notice-overlay{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(16,24,40,.42)}
+.transaction-notice-dialog{width:min(380px,calc(100vw - 32px));max-height:70vh;overflow-y:auto;box-sizing:border-box;padding:20px;background:#fff;border:1px solid #e4e7ec;border-radius:14px;box-shadow:0 20px 60px rgba(16,24,40,.22)}
+.transaction-notice-dialog .drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.transaction-notice-dialog .drawer-head h2{margin:5px 0 0;font-size:16px;line-height:1.35}
+@media(max-width:480px){.transaction-notice-overlay{padding:12px}.transaction-notice-dialog{width:calc(100vw - 24px);max-height:72vh;padding:16px;border-radius:12px}}
