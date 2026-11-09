@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabaseClient'
-import { CANONICAL_ACCOUNT, CANONICAL_BENEFICIARIES, CANONICAL_VAULTS, makeAccountName } from './data/canonicalBanking'
+import { CANONICAL_ACCOUNT, CANONICAL_BENEFICIARIES, makeAccountName } from './data/canonicalBanking'
 import type { Transaction } from './types'
 
 type CustomerData = {
@@ -31,7 +31,7 @@ async function ensureCustomer(userId: string) {
   let { data: account } = await supabase.from('accounts').select('*').eq('user_id', userId).eq('account_type', 'checking').order('created_at').maybeSingle()
   if (!account) { const created = await supabase.from('accounts').insert({ user_id: userId, account_type: CANONICAL_ACCOUNT.accountType, account_name: accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: null, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).select('*').single(); if (created.error) throw created.error; account = created.data }
   const accountLast4 = account.account_number ? String(account.account_number).slice(-4) : null; if (account.account_name !== accountName || (accountLast4 && account.account_number_last4 !== accountLast4)) { const renamed = await supabase.rpc('rename_own_account', { p_account_id: account.id, p_account_name: accountName }); if (renamed.error) throw renamed.error; account = renamed.data }
-  const existingVaults = await supabase.from('savings_vaults').select('*').eq('user_id', userId).order('created_at'); if (!existingVaults.data?.length) { const result = await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' }))); if (result.error) throw result.error }
+  // Savings vaults are created only by an explicit customer action. Never seed generic vaults during account bootstrap.
   const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!beneficiaryCount) { const result = await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active', institution_name: b.bankName, routing_number: b.routingNumber, account_type: 'checking' }))); if (result.error) throw result.error }
   // Never generate transaction history during customer bootstrap. Transaction rows must
   // come from verified posting workflows or an administrator-approved historical import.
