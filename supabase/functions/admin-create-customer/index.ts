@@ -28,7 +28,7 @@ Deno.serve(async(req)=>{
  const supportedPeriods=[3,6,12,24,36,60];
  if(includeHistory){
    if(period!==null&&(!supportedPeriods.includes(period)||customStart||customEnd))return json({ok:false,message:"Choose 3, 6, 12, 24, 36 or 60 months, or use a custom date range"},400);
-   if(period===null&&(!customStart||!customEnd||!/^\d{4}-\d{2}-\d{2}$/.test(customStart)||!/^\d{4}-\d{2}-\d{2}$/.test(customEnd)||customStart>customEnd||customEnd>accountCreatedDate))return json({ok:false,message:"Enter a valid custom history range ending on or before the account opening date"},400);
+   if(period===null&&(!customStart||!customEnd||!/^\d{4}-\d{2}-\d{2}$/.test(customStart)||!/^\d{4}-\d{2}-\d{2}$/.test(customEnd)||customStart<accountCreatedDate||customStart>customEnd||customEnd>new Date().toISOString().slice(0,10)))return json({ok:false,message:"Enter a valid custom history range ending on or before the account opening date"},400);
  }else if(period!==null||customStart||customEnd){return json({ok:false,message:"History period must be empty when historical activity is disabled"},400)}
  const{data:created,error:createError}=await client.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:fullName,preferred_name:fullName,phone,country,account_name:accountName,provisioned_by_admin:admin.id}});
  if(createError||!created.user){const message=createError?.message?.toLowerCase().includes("already")?"A customer with this email already exists":"Could not create the customer login";return json({ok:false,message},400)}
