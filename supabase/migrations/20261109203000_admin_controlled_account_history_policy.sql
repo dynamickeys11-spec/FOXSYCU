@@ -9,7 +9,7 @@ create table if not exists public.account_history_policies (
   history_start_date date,
   history_end_date date,
   history_source text not null default 'verified_import',
-  created_by uuid not null references auth.users(id),
+  created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint account_history_period_valid
@@ -155,3 +155,25 @@ drop trigger if exists trg_sync_canonical_account_open_date on public.transactio
 -- Remove automatic enrichment that inserted invented counterparties and payment
 -- details into records marked as mock data. Imported history must retain its source.
 drop trigger if exists transactions_mockdata_enrichment on public.transactions;
+
+-- Every new account receives an explicit no-history policy unless an admin
+-- subsequently enables verified history through the protected RPC.
+create or replace function public.default_account_history_policy()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  insert into public.account_history_policies(account_id, include_history, history_source, created_by)
+  values (new.id, false, 'verified_import', null)
+  on conflict (account_id) do nothing;
+  return new;
+end;
+$function$;
+
+revoke all on function public.default_account_history_policy() from public, anon, authenticated;
+drop trigger if exists trg_default_account_history_policy on public.accounts;
+create trigger trg_default_account_history_policy
+after insert on public.accounts
+for each row execute function public.default_account_history_policy();
