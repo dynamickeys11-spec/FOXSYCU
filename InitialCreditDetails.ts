@@ -1,2 +1,0 @@
-export const INITIAL_CREDIT_TYPES=['Deposit','Cash Deposit','ACH Credit','Wire Transfer','Direct Deposit','Account Funding','Other']
-export type InitialCreditDetails={amount:number;credit_date?:string|null;credit_time?:string|null;transaction_type?:string|null;reference?:string|null;description?:string|null;memo?:string|null;sender_name?:string|null;sender_account?:string|null;sender_bank?:string|null;routing_number?:string|null;effective_date?:string|null;posting_date?:string|null;internal_note?:string|null}
