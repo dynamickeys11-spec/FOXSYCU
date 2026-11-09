@@ -46,6 +46,19 @@ create policy account_history_policies_admin_read
     )
   );
 
+
+drop policy if exists account_history_policies_customer_read on public.account_history_policies;
+create policy account_history_policies_customer_read
+  on public.account_history_policies
+  for select to authenticated
+  using (
+    exists (
+      select 1 from public.accounts a
+      where a.id = account_history_policies.account_id
+        and a.user_id = (select auth.uid())
+    )
+  );
+
 create or replace function public.admin_set_account_history_policy(
   p_admin_id uuid,
   p_account_id uuid,
@@ -90,7 +103,9 @@ begin
 
     if p_history_period_months is null then
       if p_history_start_date is null or p_history_end_date is null
-         or p_history_start_date > p_history_end_date then
+         or p_history_start_date > p_history_end_date
+         or p_history_start_date < v_account.created_at::date
+         or p_history_end_date > current_date then
         raise exception 'a valid custom history date range is required';
       end if;
       if p_history_end_date > v_account.created_at::date then
@@ -99,8 +114,8 @@ begin
       v_start := p_history_start_date;
       v_end := p_history_end_date;
     else
-      v_end := v_account.created_at::date;
-      v_start := (v_end - make_interval(months => p_history_period_months))::date;
+      v_end := current_date;
+      v_start := greatest(v_account.created_at::date, (current_date - make_interval(months => p_history_period_months))::date);
     end if;
   end if;
 
