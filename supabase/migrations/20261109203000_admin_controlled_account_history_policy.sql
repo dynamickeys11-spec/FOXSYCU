@@ -24,7 +24,7 @@ create table if not exists public.account_history_policies (
       (include_history = false and history_period_months is null and history_start_date is null and history_end_date is null)
       or
       (include_history = true and (
-        (history_period_months is not null and history_start_date is null and history_end_date is null)
+        (history_period_months is not null and history_period_months in (3,6,12,24,36,60) and history_start_date is not null and history_end_date is not null)
         or
         (history_period_months is null and history_start_date is not null and history_end_date is not null)
       ))
