@@ -8,7 +8,7 @@ import { useLocation } from 'react-router-dom'
 import './feature-banking.css'
 
 const dateTime=(v:any)=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})}
-const fmtDate=(v:any)=>{if(!v)return '—';const raw=String(v);const d=/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)?new Date(Number(raw.slice(0,4)),Number(raw.slice(5,7))-1,Number(raw.slice(8,10))):new Date(v);return Number.isNaN(d.getTime())?raw:d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+const fmtDate=(v:any)=>{if(!v)return '—';const raw=String(v);const isDateOnly=raw.length===10&&raw[4]==='-'&&raw[7]==='-';const d=isDateOnly?new Date(Number(raw.slice(0,4)),Number(raw.slice(5,7))-1,Number(raw.slice(8,10))):new Date(v);return Number.isNaN(d.getTime())?raw:d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
 const fmtTime=(v:any)=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
 const money=(n:number)=>`${n<0?'-':''}$${Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`
 
