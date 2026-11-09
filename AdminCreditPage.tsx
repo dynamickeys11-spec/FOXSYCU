@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CheckCircle2, Search } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import AdminNavigation from './AdminNavigation'
@@ -13,13 +13,17 @@ export default function AdminCreditPage(){
  const[amount,setAmount]=useState('');const[creditDate,setCreditDate]=useState('');const[creditTime,setCreditTime]=useState('');const[transactionType,setTransactionType]=useState('Deposit')
  const[reference,setReference]=useState('');const[description,setDescription]=useState('');const[memo,setMemo]=useState('');const[senderName,setSenderName]=useState('');const[senderAccount,setSenderAccount]=useState('');const[senderBank,setSenderBank]=useState('');const[routingNumber,setRoutingNumber]=useState('')
  const[effectiveDate,setEffectiveDate]=useState('');const[postingDate,setPostingDate]=useState('');const[internalNote,setInternalNote]=useState('')
+ const creditAttemptRef=useRef<{fingerprint:string;key:string}|null>(null)
  const[loading,setLoading]=useState(true);const[saving,setSaving]=useState(false);const[error,setError]=useState('');const[success,setSuccess]=useState<{reference:string;balance:number}|null>(null)
  const load=async()=>{setLoading(true);setError('');const admin=await supabase.rpc('is_admin');if(admin.error||!admin.data){setError(admin.error?.message||'Admin access required');setLoading(false);return}const{data,error:e}=await supabase.rpc('admin_list_customers');if(e)setError(e.message);setCustomers((data||[]) as Customer[]);setLoading(false)}
  useEffect(()=>{void load()},[])
  const filtered=useMemo(()=>{const q=query.trim().toLowerCase();return q?customers.filter(c=>`${c.preferred_name||''} ${c.full_name||''} ${c.email||''} ${c.account_name||''} ${c.id}`.toLowerCase().includes(q)):customers},[customers,query])
- const reset=()=>{setAmount('');setCreditDate('');setCreditTime('');setReference('');setDescription('');setMemo('');setSenderName('');setSenderAccount('');setSenderBank('');setRoutingNumber('');setEffectiveDate('');setPostingDate('');setInternalNote('')}
+ const reset=()=>{creditAttemptRef.current=null;setAmount('');setCreditDate('');setCreditTime('');setReference('');setDescription('');setMemo('');setSenderName('');setSenderAccount('');setSenderBank('');setRoutingNumber('');setEffectiveDate('');setPostingDate('');setInternalNote('')}
  const submit=async()=>{setError('');setSuccess(null);if(!selected?.account_id)return setError('Select a customer account first.');const n=Number(amount.replace(/[,$\s]/g,''));if(!Number.isFinite(n)||n<=0)return setError('Enter a valid credit amount greater than $0.');setSaving(true)
-  const credit_details={amount:n,credit_date:creditDate||null,credit_time:creditTime||null,transaction_type:transactionType,reference:reference.trim()||null,description:description.trim()||null,memo:memo.trim()||null,sender_name:senderName.trim()||null,sender_account:senderAccount.trim()||null,sender_bank:senderBank.trim()||null,routing_number:routingNumber.trim()||null,effective_date:effectiveDate||null,posting_date:postingDate||null,internal_note:internalNote.trim()||null}
+  const creditDetails={amount:n,credit_date:creditDate||null,credit_time:creditTime||null,transaction_type:transactionType,reference:reference.trim()||null,description:description.trim()||null,memo:memo.trim()||null,sender_name:senderName.trim()||null,sender_account:senderAccount.trim()||null,sender_bank:senderBank.trim()||null,routing_number:routingNumber.trim()||null,effective_date:effectiveDate||null,posting_date:postingDate||null,internal_note:internalNote.trim()||null}
+  const fingerprint=JSON.stringify({account_id:selected.account_id,credit_details:creditDetails})
+  if(!creditAttemptRef.current||creditAttemptRef.current.fingerprint!==fingerprint){creditAttemptRef.current={fingerprint,key:crypto.randomUUID()}}
+  const credit_details={...creditDetails,idempotency_key:creditAttemptRef.current.key}
   const{data,error:e}=await supabase.rpc('admin_credit_account_detailed',{p_account_id:selected.account_id,p_credit_details:credit_details})
   if(e)setError(e.message);else if(data?.error)setError(String(data.error));else{setSuccess({reference:String(data.reference||'Credit posted'),balance:Number(data.new_available_balance||0)});reset();await load()}setSaving(false)}
  return <main className="admin-shell"><AdminNavigation/><section className="admin-main">
