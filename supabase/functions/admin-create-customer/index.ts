@@ -15,8 +15,8 @@ const json = (body: unknown, status = 200) =>
 
 function secretKey() {
   const raw = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (raw) return JSON.parse(raw).default;
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  if (!raw) throw new Error("SUPABASE_SECRET_KEYS is not configured");
+  return JSON.parse(raw).default;
 }
 
 const db = () =>
