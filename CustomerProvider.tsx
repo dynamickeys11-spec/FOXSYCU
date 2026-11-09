@@ -1,9 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabaseClient'
-import { customer as seed } from './data/mockData'
 import { CANONICAL_ACCOUNT, CANONICAL_BENEFICIARIES, CANONICAL_VAULTS, makeAccountName } from './data/canonicalBanking'
-import { enrichTransaction } from './data/realisticBankingV2'
 import type { Transaction } from './types'
 
 type CustomerData = {
@@ -23,13 +21,6 @@ function normalizeFNCUBrand(value: any): any {
   return value
 }
 
-function dbTransaction(t: Transaction, userId: string, accountId: string, index: number) {
-  const enriched = enrichTransaction(t, index)
-  const reference = `${enriched.reference}-${userId.slice(0, 8)}`
-  const transactionType = enriched.type ?? enriched.kind ?? (enriched.amount >= 0 ? 'Deposit' : 'Payment')
-  return { user_id: userId, account_id: accountId, reference, transaction_type: transactionType, direction: enriched.amount >= 0 ? 'credit' : 'debit', amount: Math.abs(enriched.amount), fee: enriched.fee ?? 0, currency: enriched.currency, status: enriched.status.toLowerCase(), counterparty: enriched.counterparty, description: enriched.description, memo: enriched.memo, initiated_at: enriched.initiatedAt ?? new Date().toISOString(), effective_date: new Date(enriched.effectiveDate ?? enriched.date).toISOString().slice(0, 10), posted_at: enriched.postedAt ? new Date(enriched.postedAt).toISOString() : null, available_balance_after: enriched.availableBalanceAfter, posted_balance_after: enriched.postedBalanceAfter, metadata: { ...(enriched.metadata ?? {}), kind: enriched.kind ?? transactionType, category: enriched.category ?? null, synthetic: true, seed_source: 'mockData-v1', institution_name: enriched.institution?.name ?? null, merchant: enriched.merchant ?? null, merchant_category: enriched.merchantCategory ?? null, counterparty_details: enriched.counterpartyDetails ?? null, source_account: enriched.sourceAccount ?? null, destination_account: enriched.destinationAccount ?? null, fee: enriched.fee ?? 0 } }
-}
-
 async function ensureCustomer(userId: string) {
   const { data: authData } = await supabase.auth.getUser(); const user = authData.user; const meta = user?.user_metadata ?? {}
   const profilePayload = { full_name: String(meta.full_name || meta.name || user?.email?.split('@')[0] || 'Customer').trim(), preferred_name: meta.preferred_name || null, phone: meta.phone || null, date_of_birth: meta.date_of_birth || null, address_line1: meta.address_line1 || null, city: meta.city || null, state_region: meta.state_region || null, postal_code: meta.postal_code || null, country: meta.country || 'United States', occupation: meta.occupation || null, employment_status: meta.employment_status || null }
@@ -42,12 +33,8 @@ async function ensureCustomer(userId: string) {
   const accountLast4 = account.account_number ? String(account.account_number).slice(-4) : null; if (account.account_name !== accountName || (accountLast4 && account.account_number_last4 !== accountLast4)) { const renamed = await supabase.rpc('rename_own_account', { p_account_id: account.id, p_account_name: accountName }); if (renamed.error) throw renamed.error; account = renamed.data }
   const existingVaults = await supabase.from('savings_vaults').select('*').eq('user_id', userId).order('created_at'); if (!existingVaults.data?.length) { const result = await supabase.from('savings_vaults').insert(CANONICAL_VAULTS.map(v => ({ user_id: userId, name: v.name, balance: v.balance, target_amount: v.target, apy: v.apy, status: 'active' }))); if (result.error) throw result.error }
   const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!beneficiaryCount) { const result = await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active', institution_name: b.bankName, routing_number: b.routingNumber, account_type: 'checking' }))); if (result.error) throw result.error }
-  const { count: transactionCount } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('account_id', account!.id)
-  const { data: provisionedAudit } = await supabase.from('audit_logs').select('id').eq('user_id', userId).eq('action', 'admin_customer_created').limit(1)
-  if ((transactionCount ?? 0) === 0 && !provisionedAudit?.length) {
-    const exactRows = seed.transactions.map((t, index) => dbTransaction(t, userId, account!.id, index))
-    for (let i = 0; i < exactRows.length; i += 100) { const result = await supabase.from('transactions').insert(exactRows.slice(i, i + 100)); if (result.error) throw result.error }
-  }
+  // Never generate transaction history during customer bootstrap. Transaction rows must
+  // come from verified posting workflows or an administrator-approved historical import.
   const { count: notificationCount } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!notificationCount) { const result = await supabase.from('notifications').insert([{ user_id: userId, title: 'Transfer alert', body: 'A savings transfer is pending authorization.', notification_type: 'transaction' }, { user_id: userId, title: 'Security alert', body: 'Your recommended security controls are active.', notification_type: 'security' }]); if (result.error) throw result.error }
   const { data: security } = await supabase.from('security_preferences').select('user_id').eq('user_id', userId).maybeSingle(); if (!security) { const result = await supabase.from('security_preferences').insert({ user_id: userId, two_fa: true, passkey: false, alerts: true }); if (result.error) throw result.error }
   const { data: card } = await supabase.from('card_controls').select('id').eq('user_id', userId).eq('account_id', account!.id).maybeSingle(); if (!card) { const result = await supabase.from('card_controls').insert({ user_id: userId, account_id: account!.id, last4: account!.account_number ? String(account!.account_number).slice(-4) : CANONICAL_ACCOUNT.last4 }); if (result.error) throw result.error }
