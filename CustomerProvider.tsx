@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabaseClient'
-import { CANONICAL_ACCOUNT, CANONICAL_BENEFICIARIES, makeAccountName } from './data/canonicalBanking'
+import { CANONICAL_ACCOUNT, makeAccountName } from './data/canonicalBanking'
 import type { Transaction } from './types'
 
 type CustomerData = {
@@ -32,7 +32,7 @@ async function ensureCustomer(userId: string) {
   if (!account) { const created = await supabase.from('accounts').insert({ user_id: userId, account_type: CANONICAL_ACCOUNT.accountType, account_name: accountName, currency: CANONICAL_ACCOUNT.currency, account_number_last4: null, status: 'active', available_balance: CANONICAL_ACCOUNT.targetBalance, posted_balance: CANONICAL_ACCOUNT.targetBalance, pending_balance: CANONICAL_ACCOUNT.pendingAmount }).select('*').single(); if (created.error) throw created.error; account = created.data }
   const accountLast4 = account.account_number ? String(account.account_number).slice(-4) : null; if (account.account_name !== accountName || (accountLast4 && account.account_number_last4 !== accountLast4)) { const renamed = await supabase.rpc('rename_own_account', { p_account_id: account.id, p_account_name: accountName }); if (renamed.error) throw renamed.error; account = renamed.data }
   // Savings vaults are created only by an explicit customer action. Never seed generic vaults during account bootstrap.
-  const { count: beneficiaryCount } = await supabase.from('beneficiaries').select('id', { count: 'exact', head: true }).eq('user_id', userId); if (!beneficiaryCount) { const result = await supabase.from('beneficiaries').insert(CANONICAL_BENEFICIARIES.map(b => ({ user_id: userId, name: b.name, account_masked: b.accountMasked, beneficiary_type: b.type, status: 'active', institution_name: b.bankName, routing_number: b.routingNumber, account_type: 'checking' }))); if (result.error) throw result.error }
+  // Beneficiaries are user-created only. Never seed sample recipients during customer bootstrap.
   // Never generate transaction history during customer bootstrap. Transaction rows must
   // come from verified posting workflows or an administrator-approved historical import.
   const { data: security } = await supabase.from('security_preferences').select('user_id').eq('user_id', userId).maybeSingle(); if (!security) { const result = await supabase.from('security_preferences').insert({ user_id: userId, two_fa: true, passkey: false, alerts: true }); if (result.error) throw result.error }
@@ -88,7 +88,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       profile: profile.error ? current.profile : (profile.data ?? current.profile),
       account: account.error ? current.account : (account.data ?? current.account),
       vaults: vaults.error ? current.vaults : (vaults.data ?? []),
-      beneficiaries: beneficiaries.error ? current.beneficiaries : (beneficiaries.data ?? []).map((b: any) => ({ ...b, routing_number: b.routing_number || (b.name === 'Alex Smith' ? '021000021' : b.name === 'Maria Johnson' ? '026009593' : b.name === 'Northstar Holdings' ? '121000248' : b.routing_number) })),
+      beneficiaries: beneficiaries.error ? current.beneficiaries : (beneficiaries.data ?? []),
       transactions: transactions.error ? current.transactions : (transactions.data ?? []).filter((row: any) => { const policyStart = historyPolicyResult.data?.include_history ? historyPolicyResult.data.history_start_date : null; const openingDate = account.data?.created_at ? String(account.data.created_at).slice(0,10) : null; const earliestVisible = policyStart || openingDate; return !earliestVisible || !row.effective_date || String(row.effective_date) >= earliestVisible }).map(toTransaction),
       notifications: notifications.error ? current.notifications : (notifications.data ?? []),
       card: card.error ? current.card : (card.data ?? current.card),
