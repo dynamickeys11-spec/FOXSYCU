@@ -82,6 +82,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     ])
 
     const failed = [profile, account, vaults, beneficiaries, transactions, notifications, card, security, supportCases, messages, notificationPreferences, externalAccounts, categories, budgets, recurringPayments, billPayees, billPayments, directDeposit, checkDeposits, loginEvents, devices].filter(r => r.error)
+    const historyPolicyResult = account.data ? await supabase.from('account_history_policies').select('include_history,history_start_date,history_end_date,history_period_months').eq('account_id', account.data.id).maybeSingle() : { data: null, error: null }
     if (failed.length) console.error('FNCU customer data refresh errors:', failed.map(r => r.error?.message))
 
     setData(current => ({
@@ -89,7 +90,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       account: account.error ? current.account : (account.data ?? current.account),
       vaults: vaults.error ? current.vaults : (vaults.data ?? []),
       beneficiaries: beneficiaries.error ? current.beneficiaries : (beneficiaries.data ?? []).map((b: any) => ({ ...b, routing_number: b.routing_number || (b.name === 'Alex Smith' ? '021000021' : b.name === 'Maria Johnson' ? '026009593' : b.name === 'Northstar Holdings' ? '121000248' : b.routing_number) })),
-      transactions: transactions.error ? current.transactions : (transactions.data ?? []).map(toTransaction),
+      transactions: transactions.error ? current.transactions : (transactions.data ?? []).filter((row: any) => { const policyStart = historyPolicyResult.data?.include_history ? historyPolicyResult.data.history_start_date : null; const openingDate = account.data?.created_at ? String(account.data.created_at).slice(0,10) : null; const earliestVisible = policyStart || openingDate; return !earliestVisible || !row.effective_date || String(row.effective_date) >= earliestVisible }).map(toTransaction),
       notifications: notifications.error ? current.notifications : (notifications.data ?? []),
       card: card.error ? current.card : (card.data ?? current.card),
       security: security.error ? current.security : (security.data ?? current.security),
